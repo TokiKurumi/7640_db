@@ -1,0 +1,29 @@
+"""
+前端配置文件
+"""
+
+# API 配置
+API_BASE_URL = "http://localhost:8000/api"
+API_TIMEOUT = 10
+
+# 应用配置
+APP_TITLE = "E-Commerce Platform GUI"
+APP_WIDTH = "1000"
+APP_HEIGHT = "700"
+
+# UI 配置
+THEME_NAME = "clam"
+FONT_FAMILY = "TkDefaultFont"
+FONT_SIZE_NORMAL = 10
+FONT_SIZE_TITLE = 14
+
+# 颜色配置
+COLOR_SUCCESS = "#4CAF50"
+COLOR_ERROR = "#F44336"
+COLOR_WARNING = "#FF9800"
+COLOR_INFO = "#2196F3"
+
+# 应用状态
+APP_STATUS_READY = "就绪"
+APP_STATUS_LOADING = "加载中..."
+APP_STATUS_ERROR = "错误"
