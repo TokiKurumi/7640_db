@@ -53,12 +53,13 @@ class EcommercePlatformApp:
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
-        # 创建标签页控制器
+         # 创建标签页控制器
+        # 注意：vendors, products, customers 还是空的，会在 load_initial_data 中加载和更新
         self.vendor_tab = VendorTabController(self.notebook, self.on_vendors_updated)
-        self.product_tab = ProductTabController(self.notebook, self.vendors)
+        self.product_tab = ProductTabController(self.notebook, [])
         self.customer_tab = CustomerTabController(self.notebook)
-        self.order_tab = OrderTabController(self.notebook, self.customers, self.products)
-        self.transaction_tab = TransactionTabController(self.notebook, self.vendors)
+        self.order_tab = OrderTabController(self.notebook, [], [])
+        self.transaction_tab = TransactionTabController(self.notebook, [])
         
         # 创建状态栏
         self.status_bar = StatusBar(self.root)
@@ -70,12 +71,19 @@ class EcommercePlatformApp:
         try:
             # 加载供应商
             self.vendors = APIClient.get_vendors()
+            print(self.vendors)
             
             # 加载产品
             self.products = APIClient.get_products()
             
             # 加载客户
             self.customers = APIClient.get_customers()
+            
+            # 更新标签页引用
+            self.product_tab.vendors = self.vendors
+            self.order_tab.customers = self.customers
+            self.order_tab.products = self.products
+            self.transaction_tab.vendors = self.vendors
             
             # 刷新所有标签页
             self.vendor_tab.refresh_vendors()

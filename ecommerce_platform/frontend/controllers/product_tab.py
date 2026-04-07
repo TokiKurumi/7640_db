@@ -4,16 +4,17 @@
 
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional, List, Dict, Any
 from controllers.tab_controller import TabController
-from ui.base_components import BaseFrame, InputFrame, DataTable, DialogHelper
+from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DialogHelper
 from services.api_client import APIClient
 
 
 class ProductTabController(TabController):
     """产品标签页"""
     
-    def __init__(self, notebook: ttk.Notebook, vendors: list = None):
-        self.vendors = vendors or []
+    def __init__(self, notebook: ttk.Notebook, vendors: Optional[List[Dict[str, Any]]] = None):
+        self.vendors = vendors if vendors is not None else []
         self.products = []
         super().__init__(notebook, "产品")
 
@@ -27,12 +28,14 @@ class ProductTabController(TabController):
         ttk.Button(action_frame, text="搜索", command=self.show_search_dialog).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text="刷新", command=self.refresh_products).pack(side=tk.LEFT, padx=5)
         
-        # 产品表格
-        self.product_table = DataTable(
+        # 产品表格（分页）
+        self.product_table = PaginatedDataTable(
             self.frame,
             columns=["ID", "供应商", "名称", "价格", "库存", "标签"],
+            page_size=10,
             title="产品列表"
         )
+        self.product_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_products(self):
         """刷新产品列表"""
@@ -60,7 +63,7 @@ class ProductTabController(TabController):
         """显示创建产品对话框"""
         dialog = tk.Toplevel(self.frame)
         dialog.title("新建产品")
-        dialog.geometry("500x400")
+        dialog.geometry("500x350")
         
         # 输入框
         vendor_options = [f"(ID:{v['vendor_id']}) {v['business_name']}" for v in self.vendors]
@@ -73,8 +76,8 @@ class ProductTabController(TabController):
             {'label': '标签1', 'key': 'tag1', 'type': 'text'},
             {'label': '标签2', 'key': 'tag2', 'type': 'text'},
             {'label': '标签3', 'key': 'tag3', 'type': 'text'},
-        ], padding=10)
-        fields_frame.pack(fill=tk.X, padx=10, pady=10)
+        ], layout="vertical", padding=10)
+        fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 按钮
         button_frame = ttk.Frame(dialog)
@@ -120,6 +123,10 @@ class ProductTabController(TabController):
                 results = APIClient.search_products(tag)
                 vendors_map = {v['vendor_id']: v['business_name'] for v in self.vendors}
                 
+                if not results:
+                    DialogHelper.show_error("提示", f"未找到包含'{tag}'标签的产品")
+                    return
+                
                 for product in results:
                     vendor_name = vendors_map.get(product['vendor_id'], 'Unknown')
                     tags = ", ".join([t for t in [product.get('tag1'), product.get('tag2'), product.get('tag3')] if t])
@@ -133,6 +140,7 @@ class ProductTabController(TabController):
                         tags
                     ])
                 
+                DialogHelper.show_success("成功", f"找到{len(results)}个匹配的产品")
                 dialog.destroy()
             except Exception as e:
                 DialogHelper.show_error("错误", str(e))

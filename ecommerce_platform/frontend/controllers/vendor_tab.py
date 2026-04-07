@@ -5,7 +5,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controllers.tab_controller import TabController
-from ui.base_components import BaseFrame, InputFrame, DataTable, DialogHelper
+from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DialogHelper
 from services.api_client import APIClient
 
 
@@ -25,12 +25,14 @@ class VendorTabController(TabController):
         ttk.Button(button_frame, text="新建供应商", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="刷新", command=self.refresh_vendors).pack(side=tk.LEFT, padx=5)
         
-        # 创建数据表格
-        self.vendor_table = DataTable(
+        # 创建数据表格（分页）
+        self.vendor_table = PaginatedDataTable(
             self.frame,
             columns=["ID", "业务名称", "评分", "位置"],
+            page_size=10,
             title="供应商列表"
         )
+        self.vendor_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_vendors(self):
         """刷新供应商列表"""
@@ -56,15 +58,15 @@ class VendorTabController(TabController):
         # 创建对话框窗口
         dialog = tk.Toplevel(self.frame)
         dialog.title("新建供应商")
-        dialog.geometry("400x150")
+        dialog.geometry("450x150")
         dialog.resizable(False, False)
         
         # 输入框
         fields_frame = InputFrame(dialog, [
             {'label': '业务名称', 'key': 'name', 'type': 'text'},
             {'label': '地理位置', 'key': 'location', 'type': 'text'}
-        ], padding=10)
-        fields_frame.pack(fill=tk.X, padx=10, pady=10)
+        ], layout="vertical", padding=10)
+        fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 按钮
         button_frame = ttk.Frame(dialog)

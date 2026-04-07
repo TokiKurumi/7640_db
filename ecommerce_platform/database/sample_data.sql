@@ -51,7 +51,7 @@ INSERT INTO products (vendor_id, product_name, listed_price, stock_quantity, tag
 (5, 'Database Design Fundamentals', 109.99, 80, 'books', 'databases', 'technical'),
 (5, 'Web Development with FastAPI', 119.99, 70, 'books', 'web-development', 'api'),
 (5, 'Data Science Handbook', 139.99, 60, 'books', 'data-science', 'technical');
-
+(5, 'Comic Book', 33.33, 900, 'books', 'gaming', 'comic');
 -- ============================================================================
 -- Insert Sample Customers
 -- ============================================================================

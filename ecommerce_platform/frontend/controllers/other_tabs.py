@@ -4,13 +4,17 @@
 
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional, List, Dict, Any
 from controllers.tab_controller import TabController
-from ui.base_components import BaseFrame, InputFrame, DataTable, DialogHelper
+from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DataTable, DialogHelper
 from services.api_client import APIClient
 
 
 class CustomerTabController(TabController):
     """客户标签页"""
+    
+    def __init__(self, notebook: ttk.Notebook):
+        super().__init__(notebook, "客户")
     
     def setup_ui(self):
         """设置 UI"""
@@ -21,12 +25,14 @@ class CustomerTabController(TabController):
         ttk.Button(button_frame, text="新建客户", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="刷新", command=self.refresh_customers).pack(side=tk.LEFT, padx=5)
         
-        # 客户表格
-        self.customer_table = DataTable(
+        # 客户表格（分页）
+        self.customer_table = PaginatedDataTable(
             self.frame,
             columns=["ID", "名称", "电话", "地址"],
+            page_size=10,
             title="客户列表"
         )
+        self.customer_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_customers(self):
         """刷新客户列表"""
@@ -78,9 +84,9 @@ class CustomerTabController(TabController):
 class OrderTabController(TabController):
     """订单标签页"""
     
-    def __init__(self, notebook: ttk.Notebook, customers: list = None, products: list = None):
-        self.customers = customers or []
-        self.products = products or []
+    def __init__(self, notebook: ttk.Notebook, customers: Optional[List[Dict[str, Any]]] = None, products: Optional[List[Dict[str, Any]]] = None):
+        self.customers = customers if customers is not None else []
+        self.products = products if products is not None else []
         self.order_items = []
         super().__init__(notebook, "订单")
 
@@ -94,12 +100,14 @@ class OrderTabController(TabController):
         ttk.Button(button_frame, text="刷新", command=self.refresh_orders).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="取消订单", command=self.cancel_selected_order).pack(side=tk.LEFT, padx=5)
         
-        # 订单表格
-        self.order_table = DataTable(
+        # 订单表格（分页）
+        self.order_table = PaginatedDataTable(
             self.frame,
             columns=["ID", "客户", "日期", "总额", "状态"],
+            page_size=10,
             title="订单列表"
         )
+        self.order_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # 将表格的选择事件与详情显示关联
         self.order_table.tree.bind("<Double-1>", lambda e: self.show_order_details())
@@ -272,8 +280,8 @@ class OrderTabController(TabController):
 class TransactionTabController(TabController):
     """交易标签页"""
     
-    def __init__(self, notebook: ttk.Notebook, vendors: list = None):
-        self.vendors = vendors or []
+    def __init__(self, notebook: ttk.Notebook, vendors: Optional[List[Dict[str, Any]]] = None):
+        self.vendors = vendors if vendors is not None else []
         super().__init__(notebook, "交易")
 
     def setup_ui(self):
@@ -285,12 +293,14 @@ class TransactionTabController(TabController):
         ttk.Button(button_frame, text="刷新", command=self.refresh_transactions).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="按供应商筛选", command=self.show_filter_dialog).pack(side=tk.LEFT, padx=5)
         
-        # 交易表格
-        self.transaction_table = DataTable(
+        # 交易表格（分页）
+        self.transaction_table = PaginatedDataTable(
             self.frame,
             columns=["ID", "订单ID", "供应商", "客户", "产品", "数量", "金额", "日期"],
+            page_size=10,
             title="交易历史"
         )
+        self.transaction_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_transactions(self):
         """刷新交易列表"""
@@ -329,8 +339,8 @@ class TransactionTabController(TabController):
             if not vendor_str:
                 DialogHelper.show_error("错误", "请选择供应商")
                 return
-            
-            vendor_id = int(vendor_str.split("(ID:")[1].rstrip(")"))
+                        
+            vendor_id = int(vendor_str.split("(ID:")[1].split(")")[0])
             
             try:
                 self.transaction_table.clear_all()

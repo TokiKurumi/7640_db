@@ -17,7 +17,7 @@ db_config = DatabaseConfig(
     host='localhost',
     port=3306,
     user='root',
-    password='',
+    password='3333',
     database='ecommerce_platform'
 )
 
