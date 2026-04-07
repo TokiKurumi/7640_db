@@ -54,7 +54,7 @@ class InputFrame(BaseFrame):
                 if field_type == 'textarea':
                     widget = tk.Text(row_frame, width=40, height=3)
                 elif field_type == 'select':
-                    widget = ttk.Combobox(row_frame, width=37, values=field.get('values', []))
+                    widget = ttk.Combobox(row_frame, width=37, values=field.get('values', []), state='readonly')
                 else:  # text
                     widget = ttk.Entry(row_frame, width=40)
                 
@@ -67,7 +67,7 @@ class InputFrame(BaseFrame):
                 if field_type == 'textarea':
                     widget = tk.Text(self, width=25, height=2)
                 elif field_type == 'select':
-                    widget = ttk.Combobox(self, width=23, values=field.get('values', []))
+                    widget = ttk.Combobox(self, width=23, values=field.get('values', []), state='readonly')
                 else:
                     widget = ttk.Entry(self, width=25)
                 

@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any
 from controllers.tab_controller import TabController
 from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DialogHelper
 from services.api_client import APIClient
+from services.async_api_client import AsyncAPIClient
 
 
 class ProductTabController(TabController):
@@ -65,8 +66,8 @@ class ProductTabController(TabController):
         dialog.title("新建产品")
         dialog.geometry("500x350")
         
-        # 输入框
-        vendor_options = [f"(ID:{v['vendor_id']}) {v['business_name']}" for v in self.vendors]
+        # 输入框 - 供应商格式统一为：{name} (ID:{id})
+        vendor_options = [f"{v['business_name']} (ID:{v['vendor_id']})" for v in self.vendors]
         
         fields_frame = InputFrame(dialog, [
             {'label': '供应商', 'key': 'vendor', 'type': 'select', 'values': vendor_options},
@@ -87,7 +88,11 @@ class ProductTabController(TabController):
             values = fields_frame.get_values()
             try:
                 vendor_str = values['vendor']
-                vendor_id = int(vendor_str.split("(ID:")[1].rstrip(")"))
+                # 改进：使用统一的解析算法
+                vendor_id_str = vendor_str.split("(ID:")[-1].rstrip(")")
+                if not vendor_id_str.isdigit():
+                    raise ValueError(f"供应商 ID 不是数字: {vendor_id_str}")
+                vendor_id = int(vendor_id_str)
                 
                 APIClient.create_product(
                     vendor_id, values['name'], float(values['price']),
@@ -96,6 +101,8 @@ class ProductTabController(TabController):
                 DialogHelper.show_success("成功", "产品创建成功")
                 dialog.destroy()
                 self.refresh_products()
+            except ValueError as e:
+                DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
             except Exception as e:
                 DialogHelper.show_error("错误", str(e))
         
@@ -118,9 +125,12 @@ class ProductTabController(TabController):
                 DialogHelper.show_error("错误", "请输入搜索标签")
                 return
             
-            try:
+            # 清空表格并显示加载状态
+            self.product_table.clear_all()
+            ttk.Button(dialog, text="搜索中...", state=tk.DISABLED).pack()
+            
+            def on_search_success(results):
                 self.product_table.clear_all()
-                results = APIClient.search_products(tag)
                 vendors_map = {v['vendor_id']: v['business_name'] for v in self.vendors}
                 
                 if not results:
@@ -142,7 +152,11 @@ class ProductTabController(TabController):
                 
                 DialogHelper.show_success("成功", f"找到{len(results)}个匹配的产品")
                 dialog.destroy()
-            except Exception as e:
-                DialogHelper.show_error("错误", str(e))
+            
+            def on_search_error(error):
+                DialogHelper.show_error("错误", f"搜索失败: {str(error)}")
+            
+            # 异步搜索，避免阻塞 UI
+            AsyncAPIClient.search_products_async(tag, on_search_success, on_search_error)
         
         ttk.Button(dialog, text="搜索", command=search).pack(pady=5)

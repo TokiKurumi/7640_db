@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk
 from config.app_config import *
 from services.api_client import APIClient
+from services.async_api_client import AsyncAPIClient
 from ui.base_components import StatusBar, DialogHelper
 from controllers.vendor_tab import VendorTabController
 from controllers.product_tab import ProductTabController
@@ -65,27 +66,47 @@ class EcommercePlatformApp:
         self.status_bar = StatusBar(self.root)
 
     def load_initial_data(self):
-        """加载初始数据"""
+        """加载初始数据（异步）"""
         self.update_status("加载数据中...")
         
-        try:
-            # 加载供应商
-            self.vendors = APIClient.get_vendors()
-            print(self.vendors)
-            
-            # 加载产品
-            self.products = APIClient.get_products()
-            
-            # 加载客户
-            self.customers = APIClient.get_customers()
-            
+        # 计数器：用于跟踪完成的加载任务
+        self.load_count = 0
+        self.load_total = 3  # 需要加载 3 种数据：vendors, products, customers
+        
+        def on_vendors_loaded(data):
+            self.vendors = data
+            self._on_data_loaded()
+        
+        def on_products_loaded(data):
+            self.products = data
+            self._on_data_loaded()
+        
+        def on_customers_loaded(data):
+            self.customers = data
+            self._on_data_loaded()
+        
+        def on_error(error):
+            DialogHelper.show_error("错误", f"加载数据失败: {str(error)}")
+            self.update_status("错误")
+        
+        # 并行加载三种数据（异步）
+        AsyncAPIClient.get_vendors_async(on_vendors_loaded, on_error)
+        AsyncAPIClient.get_products_async(on_products_loaded, on_error)
+        AsyncAPIClient.get_customers_async(on_customers_loaded, on_error)
+    
+    def _on_data_loaded(self):
+        """数据加载回调"""
+        self.load_count += 1
+        
+        # 当所有数据都加载完成时
+        if self.load_count == self.load_total:
             # 更新标签页引用
             self.product_tab.vendors = self.vendors
             self.order_tab.customers = self.customers
             self.order_tab.products = self.products
             self.transaction_tab.vendors = self.vendors
             
-            # 刷新所有标签页
+            # 刷新所有标签页（同步）
             self.vendor_tab.refresh_vendors()
             self.product_tab.refresh_products()
             self.customer_tab.refresh_customers()
@@ -93,19 +114,18 @@ class EcommercePlatformApp:
             self.transaction_tab.refresh_transactions()
             
             self.update_status("就绪")
-        except Exception as e:
-            DialogHelper.show_error("错误", f"加载数据失败: {str(e)}")
-            self.update_status("错误")
 
     def on_vendors_updated(self):
-        """供应商更新回调"""
-        try:
-            self.vendors = APIClient.get_vendors()
+        """供应商更新回调（异步）"""
+        def on_success(data):
+            self.vendors = data
             self.product_tab.vendors = self.vendors
-            self.order_tab.customers = self.customers
             self.transaction_tab.vendors = self.vendors
-        except Exception as e:
-            DialogHelper.show_error("错误", f"更新数据失败: {str(e)}")
+        
+        def on_error(error):
+            DialogHelper.show_error("错误", f"更新数据失败: {str(error)}")
+        
+        AsyncAPIClient.get_vendors_async(on_success, on_error)
 
     def update_status(self, message: str):
         """更新状态栏"""

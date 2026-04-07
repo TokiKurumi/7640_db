@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any
 from controllers.tab_controller import TabController
 from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DataTable, DialogHelper
 from services.api_client import APIClient
+from services.async_api_client import AsyncAPIClient
 
 
 class CustomerTabController(TabController):
@@ -135,14 +136,16 @@ class OrderTabController(TabController):
         """显示创建订单对话框"""
         dialog = tk.Toplevel(self.frame)
         dialog.title("新建订单")
-        dialog.geometry("600x400")
+        dialog.geometry("800x600")
         
-        # 顾客选择
-        customer_options = [f"(ID:{c['customer_id']}) {c['customer_name']}" for c in self.customers]
-        product_options = [f"(ID:{p['product_id']}) {p['product_name']} - ¥{p['listed_price']}" for p in self.products]
+        # 说明文本
+        ttk.Label(dialog, text="请逐行添加商品，每行可以选择不同的客户（但同一订单的所有商品必须属于同一客户）", 
+                 wraplength=700).pack(padx=10, pady=5)
+        
+        # 输入框 - 产品选择
+        product_options = [f"{p['product_name']} (ID:{p['product_id']})" for p in self.products]
         
         fields_frame = InputFrame(dialog, [
-            {'label': '客户', 'key': 'customer', 'type': 'select', 'values': customer_options},
             {'label': '产品', 'key': 'product', 'type': 'select', 'values': product_options},
             {'label': '数量', 'key': 'quantity', 'type': 'text'},
         ], padding=10)
@@ -152,50 +155,165 @@ class OrderTabController(TabController):
         action_frame = ttk.Frame(dialog)
         action_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Button(action_frame, text="添加项", command=lambda: self._add_order_item(fields_frame, dialog)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="创建订单", command=lambda: self._create_order(fields_frame, dialog)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
         # 订单项列表
         self.order_items = []
         items_table = DataTable(
             dialog,
-            columns=["产品ID", "数量"],
+            columns=["产品名称", "产品ID", "数量"],
             title="订单项"
         )
+        # 重要：必须 pack 才能显示
+        items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # 底部：客户选择（统一为整个订单选择）
+        bottom_frame = ttk.Frame(dialog)
+        bottom_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Label(bottom_frame, text="选择客户:", font=("Arial", 12, "bold")).pack(side=tk.LEFT, padx=5)
+        customer_options = [f"{c['customer_name']} (ID:{c['customer_id']})" for c in self.customers]
+        customer_combo = ttk.Combobox(bottom_frame, values=customer_options, width=50, state='readonly', font=("Arial", 11))
+        customer_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        ttk.Button(action_frame, text="添加项", command=lambda: self._add_order_item(fields_frame, items_table)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="创建订单", command=lambda: self._create_order_with_customer(fields_frame, items_table, dialog, customer_combo)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
-    def _add_order_item(self, fields_frame, dialog):
+    def _add_order_item(self, fields_frame, items_table):
         """添加订单项"""
         values = fields_frame.get_values()
         try:
-            product_str = values['product']
-            product_id = int(product_str.split("(ID:")[1].rstrip(")"))
-            quantity = int(values['quantity'])
+            # 检查产品是否选择
+            product_str = values['product'].strip()
+            if not product_str:
+                raise ValueError("产品未选择，请从下拉菜单中选择一个产品")
             
-            self.order_items.append({'product_id': product_id, 'quantity': quantity})
-            DialogHelper.show_success("成功", f"已添加产品 ID {product_id}")
+            # 格式："产品名称 (ID:123)" -> 提取 123
+            product_id_str = product_str.split("(ID:")[-1].rstrip(")")
+            if not product_id_str.isdigit():
+                raise ValueError(f"产品 ID 不是数字: {product_id_str}")
+            product_id = int(product_id_str)
+            
+            # 检查数量
+            quantity_str = values['quantity'].strip()
+            if not quantity_str:
+                raise ValueError("数量未输入")
+            quantity = int(quantity_str)
+            
+            if quantity <= 0:
+                DialogHelper.show_error("错误", "数量必须大于0")
+                return
+            
+            # 获取产品信息
+            product_name = next((p['product_name'] for p in self.products if p['product_id'] == product_id), "未知")
+            
+            # 添加到订单项列表
+            self.order_items.append({
+                'product_id': product_id,
+                'quantity': quantity
+            })
+            
+            # 在表格中显示
+            items_table.add_row([
+                product_name,
+                product_id,
+                quantity
+            ])
+            
+            DialogHelper.show_success("成功", f"已添加 {product_name} x{quantity}")
             fields_frame.clear_values()
+        except ValueError as e:
+            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
         except Exception as e:
             DialogHelper.show_error("错误", f"添加失败: {str(e)}")
 
+    def _create_order_with_customer(self, fields_frame, items_table, dialog, customer_combo):
+        """创建订单（从对话框底部的客户选择）"""
+        # 检查是否有订单项
+        if not self.order_items or len(self.order_items) == 0:
+            DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
+            return
+        
+        try:
+            customer_str = customer_combo.get().strip()
+            
+            # 检查是否选择了客户
+            if not customer_str:
+                raise ValueError("客户未选择，请从下拉菜单中选择一个客户")
+            
+            # 改进：更安全的字符串解析，带有详细的错误信息
+            if '(ID:' not in customer_str:
+                raise ValueError(f"客户格式错误，应为 '{{name}} (ID:{{id}})' 格式，实际收到: {customer_str}")
+            
+            customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
+            if not customer_id_str.isdigit():
+                raise ValueError(f"客户 ID 不是数字: {customer_id_str}")
+            
+            customer_id = int(customer_id_str)
+            
+            # 创建订单前清空临时变量
+            items_to_create = self.order_items.copy()
+            
+            def on_success(result):
+                DialogHelper.show_success("成功", f"订单创建成功！已添加 {len(items_to_create)} 个商品")
+                # 清空订单项并关闭对话框
+                self.order_items = []
+                dialog.destroy()
+                self.refresh_orders()
+            
+            def on_error(error):
+                DialogHelper.show_error("错误", f"创建订单失败: {str(error)}")
+            
+            # 异步创建订单，避免阻塞 UI
+            AsyncAPIClient.create_order_async(customer_id, items_to_create, on_success, on_error)
+        except ValueError as e:
+            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+        except Exception as e:
+            DialogHelper.show_error("错误", f"创建订单失败: {str(e)}")
+    
     def _create_order(self, fields_frame, dialog):
-        """创建订单"""
-        if not self.order_items:
-            DialogHelper.show_error("错误", "订单至少需要一个商品")
+        """创建订单（异步）- 保留旧方法以支持向后兼容"""
+        # 检查是否有订单项
+        if not self.order_items or len(self.order_items) == 0:
+            DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
             return
         
         values = fields_frame.get_values()
         try:
-            customer_str = values['customer']
-            customer_id = int(customer_str.split("(ID:")[1].rstrip(")"))
+            customer_str = values['customer'].strip()
             
-            APIClient.create_order(customer_id, self.order_items)
-            DialogHelper.show_success("成功", "订单创建成功")
-            self.order_items = []
-            dialog.destroy()
-            self.refresh_orders()
+            # 检查是否选择了客户
+            if not customer_str:
+                raise ValueError("客户未选择，请从下拉菜单中选择一个客户")
+            
+            # 改进：更安全的字符串解析，带有详细的错误信息
+            if '(ID:' not in customer_str:
+                raise ValueError(f"客户格式错误，应为 '{{name}} (ID:{{id}})' 格式，实际收到: {customer_str}")
+            
+            customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
+            if not customer_id_str.isdigit():
+                raise ValueError(f"客户 ID 不是数字: {customer_id_str}")
+            
+            customer_id = int(customer_id_str)
+            
+            # 创建订单前清空临时变量
+            items_to_create = self.order_items.copy()
+            
+            def on_success(result):
+                DialogHelper.show_success("成功", f"订单创建成功！已添加 {len(items_to_create)} 个商品")
+                # 清空订单项并关闭对话框
+                self.order_items = []
+                dialog.destroy()
+                self.refresh_orders()
+            
+            def on_error(error):
+                DialogHelper.show_error("错误", f"创建订单失败: {str(error)}")
+            
+            # 异步创建订单，避免阻塞 UI
+            AsyncAPIClient.create_order_async(customer_id, items_to_create, on_success, on_error)
+        except ValueError as e:
+            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
         except Exception as e:
-            DialogHelper.show_error("错误", str(e))
+            DialogHelper.show_error("错误", f"创建订单失败: {str(e)}")
 
     def show_order_details(self):
         """显示订单详情"""
@@ -210,7 +328,7 @@ class OrderTabController(TabController):
             # 创建详情窗口
             details_dialog = tk.Toplevel(self.frame)
             details_dialog.title(f"订单 {order_id} 详情")
-            details_dialog.geometry("400x300")
+            details_dialog.geometry("600x400")
             
             # 订单信息
             info_text = f"""
@@ -226,12 +344,19 @@ class OrderTabController(TabController):
             # 订单项
             items_table = DataTable(
                 details_dialog,
-                columns=["产品ID", "数量", "单价", "小计"],
+                columns=["产品名称", "产品ID", "数量", "单价", "小计"],
                 title="订单项"
             )
+            # 重要：必须 pack 才能显示
+            items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+            
+            # 构建产品ID到名称的映射
+            products_map = {p['product_id']: p['product_name'] for p in self.products}
             
             for item in order['items']:
+                product_name = products_map.get(item['product_id'], "未知产品")
                 items_table.add_row([
+                    product_name,
                     item['product_id'],
                     item['quantity'],
                     f"¥{item['unit_price']:.2f}",
@@ -272,7 +397,19 @@ class OrderTabController(TabController):
             try:
                 APIClient.cancel_order(order_id)
                 DialogHelper.show_success("成功", "订单已取消")
-                self.refresh_orders()
+                
+                # 异步刷新（避免网络延迟导致数据未更新）
+                def on_success(result):
+                    # 重新加载订单列表
+                    self.refresh_orders()
+                
+                def on_error(error):
+                    DialogHelper.show_error("错误", f"刷新订单列表失败: {str(error)}")
+                    # 强制刷新
+                    self.refresh_orders()
+                
+                # 使用异步获取最新的订单列表
+                AsyncAPIClient.get_orders_async(on_success, on_error)
             except Exception as e:
                 DialogHelper.show_error("错误", str(e))
 
@@ -328,7 +465,8 @@ class TransactionTabController(TabController):
         dialog.title("筛选交易")
         dialog.geometry("300x100")
         
-        vendor_options = [f"(ID:{v['vendor_id']}) {v['business_name']}" for v in self.vendors]
+        # 统一格式：{name} (ID:{id})
+        vendor_options = [f"{v['business_name']} (ID:{v['vendor_id']})" for v in self.vendors]
         
         ttk.Label(dialog, text="选择供应商:").pack(padx=10, pady=5)
         vendor_combo = ttk.Combobox(dialog, values=vendor_options, width=28)
@@ -339,10 +477,14 @@ class TransactionTabController(TabController):
             if not vendor_str:
                 DialogHelper.show_error("错误", "请选择供应商")
                 return
-                        
-            vendor_id = int(vendor_str.split("(ID:")[1].split(")")[0])
             
             try:
+                # 统一解析算法
+                vendor_id_str = vendor_str.split("(ID:")[-1].rstrip(")")
+                if not vendor_id_str.isdigit():
+                    raise ValueError(f"供应商 ID 不是数字: {vendor_id_str}")
+                vendor_id = int(vendor_id_str)
+                
                 self.transaction_table.clear_all()
                 transactions = APIClient.get_transactions(vendor_id)
                 
@@ -359,7 +501,9 @@ class TransactionTabController(TabController):
                     ])
                 
                 dialog.destroy()
+            except ValueError as e:
+                DialogHelper.show_error("错误", f"筛选失败: {str(e)}")
             except Exception as e:
-                DialogHelper.show_error("错误", str(e))
+                DialogHelper.show_error("错误", f"筛选失败: {str(e)}")
         
         ttk.Button(dialog, text="筛选", command=filter_by_vendor).pack(pady=5)
