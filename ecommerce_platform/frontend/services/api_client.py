@@ -1,5 +1,5 @@
 """
-API 服务客户端
+API Service Client
 """
 
 import requests
@@ -8,19 +8,19 @@ from typing import Optional, Dict, Any, List
 
 
 class APIClient:
-    """API 客户端 - 所有 HTTP 请求"""
+    """API Client - All HTTP Requests"""
 
     @staticmethod
     def request(method: str, endpoint: str, data: Optional[dict] = None, 
                 params: Optional[dict] = None) -> Any:
         """
-        发起 API 请求
-        :param method: HTTP 方法 (GET, POST, PUT, DELETE)
-        :param endpoint: API 端点路径
-        :param data: 请求数据 (JSON)
-        :param params: 查询参数
-        :return: 响应数据
-        :raises: Exception 当请求失败
+        Make an API request
+        :param method: HTTP method (GET, POST, PUT, DELETE)
+        :param endpoint: API endpoint path
+        :param data: Request data (JSON)
+        :param params: Query parameters
+        :return: Response data
+        :raises: Exception when the request fails
         """
         try:
             url = f"{API_BASE_URL}{endpoint}"
@@ -34,19 +34,19 @@ class APIClient:
             elif method == "DELETE":
                 response = requests.delete(url, timeout=API_TIMEOUT)
             else:
-                raise ValueError(f"不支持的方法: {method}")
+                raise ValueError(f"Unsupported method: {method}")
             
             response.raise_for_status()
             return response.json() if response.text else {}
         
         except requests.exceptions.Timeout:
-            raise Exception(f"请求超时 (>{API_TIMEOUT}秒)")
+            raise Exception(f"Request timed out (>{API_TIMEOUT}s)")
         except requests.exceptions.ConnectionError:
-            raise Exception("连接失败 - 请确保后端服务运行在 localhost:8000")
+            raise Exception("Connection failed - please ensure the backend service is running at localhost:8000")
         except requests.exceptions.HTTPError as e:
-            raise Exception(f"HTTP 错误 {e.response.status_code}: {e.response.text}")
+            raise Exception(f"HTTP Error {e.response.status_code}: {e.response.text}")
         except requests.exceptions.RequestException as e:
-            raise Exception(f"请求错误: {str(e)}")
+            raise Exception(f"Request error: {str(e)}")
 
     # ========================================================================
     # Vendor API
@@ -54,12 +54,12 @@ class APIClient:
 
     @staticmethod
     def get_vendors() -> List[Dict[str, Any]]:
-        """获取所有供应商"""
+        """Get all vendors"""
         return APIClient.request("GET", "/vendors")
 
     @staticmethod
     def create_vendor(business_name: str, location: Optional[str] = None) -> Dict[str, Any]:
-        """创建供应商"""
+        """Create a vendor"""
         data = {"business_name": business_name, "geographical_presence": location}
         return APIClient.request("POST", "/vendors", data=data)
 
@@ -69,7 +69,7 @@ class APIClient:
 
     @staticmethod
     def get_products(vendor_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """获取产品"""
+        """Get products"""
         params = {"vendor_id": vendor_id} if vendor_id else None
         return APIClient.request("GET", "/products", params=params)
 
@@ -77,7 +77,7 @@ class APIClient:
     def create_product(vendor_id: int, product_name: str, price: float,
                       stock: int, tag1: str = None, tag2: str = None,
                       tag3: str = None) -> Dict[str, Any]:
-        """创建产品"""
+        """Create a product"""
         data = {
             "product_name": product_name,
             "listed_price": price,
@@ -90,7 +90,7 @@ class APIClient:
 
     @staticmethod
     def search_products(tag: str) -> List[Dict[str, Any]]:
-        """搜索产品"""
+        """Search for products"""
         return APIClient.request("GET", "/products/search", params={"tag": tag})
 
     # ========================================================================
@@ -99,12 +99,12 @@ class APIClient:
 
     @staticmethod
     def get_customers() -> List[Dict[str, Any]]:
-        """获取所有客户"""
+        """Get all customers"""
         return APIClient.request("GET", "/customers")
 
     @staticmethod
     def create_customer(name: str, phone: str, address: str) -> Dict[str, Any]:
-        """创建客户"""
+        """Create a customer"""
         data = {
             "customer_name": name,
             "contact_number": phone,
@@ -118,29 +118,29 @@ class APIClient:
 
     @staticmethod
     def get_orders(customer_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """获取订单"""
+        """Get orders"""
         params = {"customer_id": customer_id} if customer_id else None
         return APIClient.request("GET", "/orders", params=params)
 
     @staticmethod
     def get_order_details(order_id: int) -> Dict[str, Any]:
-        """获取订单详情"""
+        """Get order details"""
         return APIClient.request("GET", f"/orders/{order_id}")
 
     @staticmethod
     def create_order(customer_id: int, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """创建订单"""
+        """Create an order"""
         data = {"customer_id": customer_id, "items": items}
         return APIClient.request("POST", "/orders", data=data)
 
     @staticmethod
     def cancel_order(order_id: int) -> Dict[str, str]:
-        """取消订单"""
+        """Cancel an order"""
         return APIClient.request("DELETE", f"/orders/{order_id}")
 
     @staticmethod
     def remove_order_item(order_id: int, product_id: int) -> Dict[str, str]:
-        """删除订单项"""
+        """Remove an order item"""
         return APIClient.request("DELETE", f"/orders/{order_id}/items/{product_id}")
 
     # ========================================================================
@@ -149,6 +149,6 @@ class APIClient:
 
     @staticmethod
     def get_transactions(vendor_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """获取交易"""
+        """Get transactions"""
         params = {"vendor_id": vendor_id} if vendor_id else None
         return APIClient.request("GET", "/transactions", params=params)

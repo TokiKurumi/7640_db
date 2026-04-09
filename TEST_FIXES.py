@@ -1,215 +1,215 @@
 #!/usr/bin/env python3
 """
-快速验证三个修复的测试脚本
+Quick verification test script for the three fixes
 """
 
 print("""
 ╔════════════════════════════════════════════════════════════════╗
-║         前端 GUI 三大问题修复 - 快速验证测试                   ║
+║         Frontend GUI Three Major Issues Fixes - Quick Verification Test                   ║
 ╚════════════════════════════════════════════════════════════════╝
 
-修复内容：
-  1. ✅ 问题1：添加订单项报错 "invalid literal for int()"
-  2. ✅ 问题2：创建订单报错 "至少需要一个商品"  
-  3. ✅ 问题3：GUI 经常无响应（异步化）
+Fixes:
+  1. ✅ Issue 1: "invalid literal for int()" error when adding an order item
+  2. ✅ Issue 2: "At least one product is required" error when creating an order
+  3. ✅ Issue 3: GUI often unresponsive (now asynchronous)
 
 ════════════════════════════════════════════════════════════════
 
-📋 测试前准备
+📋 Pre-test Preparation
 ════════════════════════════════════════════════════════════════
 
-1. 启动后端（新终端）：
+1. Start the backend (in a new terminal):
    $ cd T:/7640_db/ecommerce_platform
    $ python backend/app.py
    
-   预期输出：
+   Expected output:
    ✓ INFO:     Uvicorn running on http://127.0.0.1:8000
 
-2. 启动前端（另一个终端）：
+2. Start the frontend (in another terminal):
    $ python frontend/main_new.py
    
-   预期：应用窗口打开，显示 5 个标签页
+   Expected: The application window opens, showing 5 tabs
 
 ════════════════════════════════════════════════════════════════
 
-🧪 测试问题1修复：字符串解析
+🧪 Test Fix for Issue 1: String Parsing
 ════════════════════════════════════════════════════════════════
 
-步骤：
-  1. 点击 "订单" 标签页
-  2. 点击 "新建订单" 按钮
-  3. 选择任意客户
-  4. 从产品下拉菜单中选择一个产品
-  5. 在 "数量" 字段输入一个数字（例如 5）
-  6. 点击 "添加项" 按钮
+Steps:
+  1. Click the "Orders" tab
+  2. Click the "New Order" button
+  3. Select any customer
+  4. Select a product from the product dropdown menu
+  5. Enter a number in the "Quantity" field (e.g., 5)
+  6. Click the "Add Item" button
 
-期望结果：
-  ✅ 看到 "成功: 已添加 [产品名] x[数量]" 提示
-  ✅ 产品出现在下方的 "订单项" 表格中
-  ❌ 不应该看到 "invalid literal for int()" 错误
+Expected Result:
+  ✅ See the message "Success: Added [Product Name] x[Quantity]"
+  ✅ The product appears in the "Order Items" table below
+  ❌ Should not see the "invalid literal for int()" error
 
-验证点：
-  □ 没有字符串解析错误
-  □ 表格中显示产品名称、产品 ID、数量
-  □ 可以多次添加不同产品
-
-════════════════════════════════════════════════════════════════
-
-🧪 测试问题2修复：创建订单
-════════════════════════════════════════════════════════════════
-
-步骤：
-  1. 继续上一个测试（或重新新建订单对话框）
-  2. 添加至少 1 个商品到 "订单项" 表格
-  3. 点击 "创建订单" 按钮
-
-期望结果：
-  ✅ 看到 "成功: 订单创建成功！已添加 N 个商品" 提示
-  ✅ 对话框关闭
-  ✅ 订单表格已更新，新订单出现在列表中
-  ❌ 不应该看到 "至少需要一个商品" 错误
-
-验证点：
-  □ 没有 "至少需要一个商品" 错误
-  □ 订单创建成功提示显示正确的商品数
-  □ 订单列表中可以看到新创建的订单
-  □ 尝试在 "订单项" 表格为空时创建，应该看到错误提示
+Verification Points:
+  □ No string parsing errors
+  □ The table shows product name, product ID, and quantity
+  □ Can add different products multiple times
 
 ════════════════════════════════════════════════════════════════
 
-🧪 测试问题3修复：GUI 响应性（异步）
+🧪 Test Fix for Issue 2: Create Order
 ════════════════════════════════════════════════════════════════
 
-测试 3A：初始加载响应性
+Steps:
+  1. Continue from the previous test (or reopen the new order dialog)
+  2. Add at least 1 item to the "Order Items" table
+  3. Click the "Create Order" button
+
+Expected Result:
+  ✅ See the message "Success: Order created successfully! N items added"
+  ✅ The dialog closes
+  ✅ The orders table is updated, and the new order appears in the list
+  ❌ Should not see the "At least one product is required" error
+
+Verification Points:
+  □ No "At least one product is required" error
+  □ The successful order creation message shows the correct number of items
+  □ The newly created order can be seen in the order list
+  □ Attempting to create with an empty "Order Items" table should show an error message
+
+════════════════════════════════════════════════════════════════
+
+🧪 Test Fix for Issue 3: GUI Responsiveness (Async)
+════════════════════════════════════════════════════════════════
+
+Test 3A: Initial Load Responsiveness
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-步骤：
-  1. 重启前端应用
-  2. 立即尝试点击不同的标签页
-  3. 观察是否有卡顿或 "未响应"
+Steps:
+  1. Restart the frontend application
+  2. Immediately try clicking different tabs
+  3. Observe for any lag or "Not Responding"
 
-期望结果：
-  ✅ 应用在 1 秒内加载完所有数据
-  ✅ 可以立即切换标签页
-  ✅ 初始加载期间 UI 始终响应
-  ❌ 不应该看到 "未响应" 状态
+Expected Result:
+  ✅ The application loads all data within 1 second
+  ✅ Can switch tabs immediately
+  ✅ The UI remains responsive during the initial load
+  ❌ Should not see a "Not Responding" state
 
-验证点：
-  □ 初始加载时间 < 1 秒
-  □ 没有明显的卡顿或冻结
-  □ 可以在加载期间切换标签页
+Verification Points:
+  □ Initial load time < 1 second
+  □ No noticeable lag or freezing
+  □ Can switch tabs during loading
 
 
-测试 3B：搜索响应性
+Test 3B: Search Responsiveness
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-步骤：
-  1. 点击 "产品" 标签页
-  2. 点击 "搜索" 按钮
-  3. 输入一个标签（例如 "electronics"）
-  4. 立即点击其他标签页（在搜索完成前）
+Steps:
+  1. Click the "Products" tab
+  2. Click the "Search" button
+  3. Enter a tag (e.g., "electronics")
+  4. Immediately click other tabs (before the search completes)
 
-期望结果：
-  ✅ 切换标签页立即响应
-  ✅ 搜索在后台继续执行
-  ✅ 搜索完成后显示结果
-  ❌ 不应该在搜索期间卡住
+Expected Result:
+  ✅ Switching tabs is immediately responsive
+  ✅ The search continues to run in the background
+  ✅ Results are displayed after the search is complete
+  ❌ Should not get stuck during the search
 
-验证点：
-  □ 点击标签页立即响应
-  □ 搜索不阻塞 UI
-  □ 搜索结果最终正确显示
+Verification Points:
+  □ Clicking tabs is immediately responsive
+  □ Search does not block the UI
+  □ Search results are eventually displayed correctly
 
 
-测试 3C：创建订单响应性
+Test 3C: Create Order Responsiveness
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-步骤：
-  1. 打开新建订单对话框
-  2. 添加几个商品
-  3. 点击 "创建订单"
-  4. 立即尝试切换标签页或点击其他按钮
+Steps:
+  1. Open the new order dialog
+  2. Add a few items
+  3. Click "Create Order"
+  4. Immediately try to switch tabs or click other buttons
 
-期望结果：
-  ✅ UI 立即响应用户操作
-  ✅ 订单创建在后台执行
-  ✅ 创建完成后显示成功提示
-  ❌ 不应该在创建期间卡住
+Expected Result:
+  ✅ The UI responds to user actions immediately
+  ✅ Order creation runs in the background
+  ✅ A success message is displayed after creation is complete
+  ❌ Should not get stuck during creation
 
-验证点：
-  □ 点击其他按钮立即响应
-  □ 创建不阻塞 UI
-  □ 创建完成后订单列表更新
-
-════════════════════════════════════════════════════════════════
-
-📊 性能对比参考
-════════════════════════════════════════════════════════════════
-
-初始加载：
-  ✓ 改前：3-6 秒卡顿
-  ✓ 改后：< 1 秒响应
-
-搜索操作：
-  ✓ 改前：1-2 秒 UI 冻结
-  ✓ 改后：立即响应，后台执行
-
-创建订单：
-  ✓ 改前：1-2 秒 UI 冻结
-  ✓ 改后：立即响应，后台执行
+Verification Points:
+  □ Clicking other buttons is immediately responsive
+  □ Creation does not block the UI
+  □ The order list is updated after creation is complete
 
 ════════════════════════════════════════════════════════════════
 
-🎯 总体验收标准
+📊 Performance Comparison Reference
 ════════════════════════════════════════════════════════════════
 
-所有以下条件都满足时，修复通过验收：
+Initial Load:
+  ✓ Before: 3-6 seconds of lag
+  ✓ After: < 1 second response
 
-□ 问题1：
-  ✓ 添加项时没有字符串解析错误
-  ✓ 产品成功添加到表格显示
+Search Operation:
+  ✓ Before: 1-2 seconds of UI freeze
+  ✓ After: Immediate response, background execution
 
-□ 问题2：
-  ✓ 创建订单时没有 "至少需要一个商品" 错误
-  ✓ 订单成功创建并出现在列表中
-
-□ 问题3：
-  ✓ 初始加载 UI 始终响应（< 1 秒）
-  ✓ 搜索过程中 UI 始终响应
-  ✓ 创建订单过程中 UI 始终响应
-  ✓ 没有明显的卡顿或 "未响应" 状态
+Create Order:
+  ✓ Before: 1-2 seconds of UI freeze
+  ✓ After: Immediate response, background execution
 
 ════════════════════════════════════════════════════════════════
 
-📝 问题排查（如果出现问题）
+🎯 Overall Acceptance Criteria
 ════════════════════════════════════════════════════════════════
 
-问题：仍然出现字符串解析错误
-  → 检查 product_options 格式是否为 "{name} (ID:{id})"
-  → 检查 other_tabs.py 第 142 行
+The fix is accepted when all of the following conditions are met:
 
-问题：创建订单仍报 "至少需要一个商品"
-  → 检查是否点击了 "添加项" 按钮
-  → 检查 items_table 是否显示添加的商品
-  → 查看控制台是否有错误信息
+□ Issue 1:
+  ✓ No string parsing error when adding items
+  ✓ Product successfully added and displayed in the table
 
-问题：GUI 仍然卡顿
-  → 检查 AsyncAPIClient 是否被导入
-  → 检查后端是否运行正常
-  → 尝试重启前端应用
-  → 查看控制台是否有异常信息
+□ Issue 2:
+  ✓ No "At least one product is required" error when creating an order
+  ✓ Order successfully created and appears in the list
+
+□ Issue 3:
+  ✓ UI is always responsive on initial load (< 1 second)
+  ✓ UI is always responsive during search
+  ✓ UI is always responsive during order creation
+  ✓ No noticeable lag or "Not Responding" state
 
 ════════════════════════════════════════════════════════════════
 
-✅ 测试完成后
+📝 Troubleshooting (If Problems Occur)
 ════════════════════════════════════════════════════════════════
 
-如果所有测试都通过，可以：
-  1. 提交 Git commit（建议的信息见 BUG_FIXES_SUMMARY.md）
-  2. 部署到生产环境
-  3. 收集用户反馈
+Problem: String parsing error still occurs
+  → Check if the product_options format is "{name} (ID:{id})"
+  → Check line 142 of other_tabs.py
 
-如果有失败，请参考 BUG_FIXES_SUMMARY.md 的详细说明。
+Problem: Creating an order still reports "At least one product is required"
+  → Check if the "Add Item" button was clicked
+  → Check if the items_table displays the added products
+  → Check the console for error messages
+
+Problem: GUI is still lagging
+  → Check if AsyncAPIClient is imported
+  → Check if the backend is running correctly
+  → Try restarting the frontend application
+  → Check the console for exception messages
+
+════════════════════════════════════════════════════════════════
+
+✅ After Testing is Complete
+════════════════════════════════════════════════════════════════
+
+If all tests pass, you can:
+  1. Submit a Git commit (see BUG_FIXES_SUMMARY.md for a suggested message)
+  2. Deploy to the production environment
+  3. Collect user feedback
+
+If any tests fail, please refer to the detailed instructions in BUG_FIXES_SUMMARY.md.
 
 ════════════════════════════════════════════════════════════════
 """)

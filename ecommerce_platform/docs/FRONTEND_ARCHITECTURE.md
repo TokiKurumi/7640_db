@@ -1,64 +1,64 @@
-# 前端架构优化 - v2.0 模块化设计
+# Frontend Architecture Optimization - v2.0 Modular Design
 
-## 📐 前端架构
+## 📐 Frontend Architecture
 
-### 旧架构 (单文件 - 1000+ 行)
+### Old Architecture (Single File - 1000+ Lines)
 ```
 frontend/
-└── gui.py (1000+ 行混乱代码)
-    ├── 导入和配置
-    ├── API 客户端
-    ├── UI 创建
-    ├── 事件处理
-    └── 数据管理
+└── gui.py (1000+ lines of tangled code)
+    ├── Imports and Configuration
+    ├── API Client
+    ├── UI Creation
+    ├── Event Handling
+    └── Data Management
 ```
 
-### 新架构 (模块化)
+### New Architecture (Modular)
 ```
 frontend/
-├── main_new.py              (60 行)     ← 主应用入口
+├── main_new.py              (60 lines)     ← Main Application Entry Point
 │
 ├── config/
-│   └── app_config.py        (30 行)     ← 配置文件
+│   └── app_config.py        (30 lines)     ← Configuration File
 │
 ├── services/
-│   └── api_client.py        (150 行)    ← API 客户端
+│   └── api_client.py        (150 lines)    ← API Client
 │
 ├── ui/
-│   └── base_components.py   (200 行)    ← UI 基础组件
+│   └── base_components.py   (200 lines)    ← UI Base Components
 │
 └── controllers/
-    ├── tab_controller.py    (20 行)     ← 标签页基类
-    ├── vendor_tab.py        (80 行)     ← 供应商标签页
-    ├── product_tab.py       (150 行)    ← 产品标签页
-    └── other_tabs.py        (400 行)    ← 其他标签页
+    ├── tab_controller.py    (20 lines)     ← Tab Base Class
+    ├── vendor_tab.py        (80 lines)     ← Vendor Tab
+    ├── product_tab.py       (150 lines)    ← Product Tab
+    └── other_tabs.py        (400 lines)    ← Other Tabs
 ```
 
-## 🏗️ 四层架构
+## 🏗️ Four-Layer Architecture
 
-### Layer 1: Config (配置层)
-**职责**: 集中管理所有配置
+### Layer 1: Config
+**Responsibility**: Centralized management of all configurations.
 
-**文件**: `config/app_config.py`
+**File**: `config/app_config.py`
 
 ```python
-# API 配置
+# API Configuration
 API_BASE_URL = "http://localhost:8000/api"
 
-# UI 配置
+# UI Configuration
 APP_TITLE = "E-Commerce Platform GUI"
 APP_WIDTH = "1000"
 APP_HEIGHT = "700"
 
-# 颜色配置
+# Color Configuration
 COLOR_SUCCESS = "#4CAF50"
 COLOR_ERROR = "#F44336"
 ```
 
-### Layer 2: Services (服务层)
-**职责**: 所有 API 调用
+### Layer 2: Services
+**Responsibility**: All API calls.
 
-**文件**: `services/api_client.py`
+**File**: `services/api_client.py`
 
 ```python
 class APIClient:
@@ -70,119 +70,119 @@ class APIClient:
     def create_vendor(name: str, location: str):
         return APIClient.request("POST", "/vendors", data={...})
     
-    # ... 所有 API 方法
+    # ... all API methods
 ```
 
-### Layer 3: UI (UI 基础组件)
-**职责**: 可复用的 UI 元素
+### Layer 3: UI (UI Base Components)
+**Responsibility**: Reusable UI elements.
 
-**文件**: `ui/base_components.py`
+**File**: `ui/base_components.py`
 
 ```python
 class BaseFrame(ttk.Frame):
-    """基础框架"""
+    """Base Frame"""
 
 class InputFrame(BaseFrame):
-    """输入表单"""
+    """Input Form"""
 
 class DataTable(BaseFrame):
-    """数据表格"""
+    """Data Table"""
 
 class StatusBar(ttk.Frame):
-    """状态栏"""
+    """Status Bar"""
 
 class DialogHelper:
-    """对话框辅助"""
+    """Dialog Helper"""
 ```
 
-### Layer 4: Controllers (控制层)
-**职责**: 标签页逻辑和事件处理
+### Layer 4: Controllers
+**Responsibility**: Tab logic and event handling.
 
-**文件**: `controllers/*.py`
+**File**: `controllers/*.py`
 
 ```python
 class TabController(ABC):
-    """标签页基类"""
+    """Tab Base Class"""
     def setup_ui(self):
         pass
 
 class VendorTabController(TabController):
-    """供应商标签页"""
+    """Vendor Tab"""
     def setup_ui(self):
-        # 创建 UI
+        # Create UI
     
     def refresh_vendors(self):
-        # 加载数据
+        # Load data
 
 class ProductTabController(TabController):
-    """产品标签页"""
+    """Product Tab"""
     # ...
 ```
 
-## 📊 文件统计
+## 📊 File Statistics
 
-| 组件 | 文件数 | 行数 | 职责 |
+| Component | File Count | Line Count | Responsibility |
 |-----|--------|------|------|
-| Config | 1 | 30 | 配置管理 |
-| Services | 1 | 150 | API 调用 |
-| UI | 1 | 200 | UI 组件 |
-| Controllers | 4 | 700 | 标签页逻辑 |
-| Main | 1 | 60 | 应用入口 |
-| **总计** | **8** | **1,140** | 精简 50% ↓ |
+| Config | 1 | 30 | Configuration Management |
+| Services | 1 | 150 | API Calls |
+| UI | 1 | 200 | UI Components |
+| Controllers | 4 | 700 | Tab Logic |
+| Main | 1 | 60 | Application Entry |
+| **Total** | **8** | **1,140** | 50% leaner ↓ |
 
-## ✨ 新架构优势
+## ✨ Advantages of the New Architecture
 
-✅ **清晰的层级结构**
-- 每层职责明确
-- 易于导航和维护
+✅ **Clear Layered Structure**
+- Each layer has clear responsibilities.
+- Easy to navigate and maintain.
 
-✅ **高度可复用**
-- 所有 API 调用集中在 APIClient
-- UI 组件可被多个标签页使用
+✅ **Highly Reusable**
+- All API calls are centralized in APIClient.
+- UI components can be used by multiple tabs.
 
-✅ **易于扩展**
-- 添加新标签页只需继承 TabController
-- 添加新 API 只需在 APIClient 中添加方法
+✅ **Easy to Extend**
+- Adding a new tab only requires inheriting from TabController.
+- Adding a new API only requires adding a method in APIClient.
 
-✅ **易于测试**
-- 各层可独立测试
-- Mock 配置和服务很容易
+✅ **Easy to Test**
+- Each layer can be tested independently.
+- Easy to mock configurations and services.
 
-✅ **简洁的页面设计**
-- 没有过度设计的 UI
-- 每个标签页都很轻量级
+✅ **Clean Page Design**
+- No over-designed UI.
+- Each tab is lightweight.
 
-✅ **代码复用高**
-- InputFrame 用于所有输入
-- DataTable 用于所有列表
-- DialogHelper 用于所有对话框
+✅ **High Code Reusability**
+- InputFrame is used for all inputs.
+- DataTable is used for all lists.
+- DialogHelper is used for all dialogs.
 
-## 🚀 使用新架构
+## 🚀 Using the New Architecture
 
-### 启动应用
+### Launch the Application
 ```bash
 python frontend/main_new.py
 ```
 
-### 文件结构对比
+### File Structure Comparison
 
-**旧方式 (单文件)**:
-- 难以找到代码
-- 修改一个功能影响整个文件
-- 难以测试
-- 代码行数超过 1000
+**Old Way (Single File)**:
+- Hard to find code.
+- Modifying one feature affects the entire file.
+- Hard to test.
+- Code exceeds 1000 lines.
 
-**新方式 (模块化)**:
-- 清晰的文件组织
-- 修改隔离在单个文件
-- 易于单元测试
-- 每个文件 < 200 行
+**New Way (Modular)**:
+- Clear file organization.
+- Modifications are isolated to single files.
+- Easy for unit testing.
+- Each file is < 200 lines.
 
-## 🔄 添加新标签页
+## 🔄 Adding a New Tab
 
-只需 3 个步骤:
+Just 3 steps:
 
-### Step 1: 创建控制器
+### Step 1: Create a Controller
 ```python
 # controllers/new_tab.py
 from controllers.tab_controller import TabController
@@ -191,104 +191,104 @@ from services.api_client import APIClient
 
 class NewTabController(TabController):
     def setup_ui(self):
-        # 创建 UI
+        # Create UI
         pass
 ```
 
-### Step 2: 在主应用中添加
+### Step 2: Add to the Main Application
 ```python
 # main_new.py
 self.new_tab = NewTabController(self.notebook)
 ```
 
-### Step 3: 完成!
+### Step 3: Done!
 
-## 📝 代码示例
+## 📝 Code Examples
 
-### 创建表单
+### Create a Form
 ```python
 fields_frame = InputFrame(dialog, [
-    {'label': '名称', 'key': 'name', 'type': 'text'},
-    {'label': '描述', 'key': 'desc', 'type': 'textarea'},
-    {'label': '类型', 'key': 'type', 'type': 'select', 'values': options},
+    {'label': 'Name', 'key': 'name', 'type': 'text'},
+    {'label': 'Description', 'key': 'desc', 'type': 'textarea'},
+    {'label': 'Type', 'key': 'type', 'type': 'select', 'values': options},
 ], padding=10)
 
 values = fields_frame.get_values()  # {'name': '...', 'desc': '...', ...}
 ```
 
-### 创建表格
+### Create a Table
 ```python
-table = DataTable(frame, columns=["ID", "名称", "价格"], title="产品列表")
+table = DataTable(frame, columns=["ID", "Name", "Price"], title="Product List")
 
-# 添加行
+# Add rows
 for product in products:
-    table.add_row([product['id'], product['name'], f"¥{product['price']}"])
+    table.add_row([product['id'], product['name'], f"${product['price']}"])
 
-# 获取选中行
+# Get selected row
 row = table.get_selected()  # [id, name, price]
 ```
 
-### 调用 API
+### Call an API
 ```python
-# 简单的 GET
+# Simple GET
 vendors = APIClient.get_vendors()
 
-# 带参数的 GET
+# GET with parameters
 products = APIClient.get_products(vendor_id=1)
 
-# POST 创建
-new_vendor = APIClient.create_vendor("店铺名", "地点")
+# POST to create
+new_vendor = APIClient.create_vendor("Store Name", "Location")
 
-# 处理错误
+# Handle errors
 try:
     result = APIClient.get_vendors()
 except Exception as e:
-    DialogHelper.show_error("错误", str(e))
+    DialogHelper.show_error("Error", str(e))
 ```
 
-### 显示对话框
+### Show a Dialog
 ```python
-# 成功
-DialogHelper.show_success("成功", "操作完成")
+# Success
+DialogHelper.show_success("Success", "Operation completed")
 
-# 错误
-DialogHelper.show_error("错误", "操作失败")
+# Error
+DialogHelper.show_error("Error", "Operation failed")
 
-# 确认
-if DialogHelper.confirm("确认", "确定删除吗?"):
-    # 执行删除
+# Confirmation
+if DialogHelper.confirm("Confirm", "Are you sure you want to delete?"):
+    # Perform deletion
     pass
 ```
 
-## 🎨 UI 简洁性
+## 🎨 UI Simplicity
 
-### 设计原则
-1. **最小化 UI** - 只显示必要的信息
-2. **清晰的操作** - 明确的按钮和标签
-3. **一致的布局** - 所有标签页布局一致
-4. **快速加载** - 不加载不必要的数据
+### Design Principles
+1. **Minimalist UI** - Only show necessary information.
+2. **Clear Actions** - Clear buttons and labels.
+3. **Consistent Layout** - All tabs have a consistent layout.
+4. **Fast Loading** - Do not load unnecessary data.
 
-### 页面布局示例
+### Page Layout Example
 ```
 ┌────────────────────────────────────┐
-│ 应用标题                            │
+│ Application Title                  │
 ├────────────────────────────────────┤
-│ [按钮1] [按钮2] [按钮3]            │  ← 操作区
+│ [Button 1] [Button 2] [Button 3]   │  ← Action Area
 ├────────────────────────────────────┤
 │                                    │
 │  ┌──────────────────────────────┐  │
-│  │ 表格/表单                     │  │  ← 内容区
+│  │ Table/Form                   │  │  ← Content Area
 │  │ ...                          │  │
 │  └──────────────────────────────┘  │
 │                                    │
 ├────────────────────────────────────┤
-│ 状态: 就绪                          │  ← 状态栏
+│ Status: Ready                      │  ← Status Bar
 └────────────────────────────────────┘
 ```
 
-## 🧪 如何测试
+## 🧪 How to Test
 
-### 测试 APIClient
+### Test APIClient
 ```python
 from services.api_client import APIClient
 
@@ -298,98 +298,97 @@ def test_get_vendors():
     assert 'vendor_id' in vendors[0]
 ```
 
-### 测试 UI 组件
+### Test UI Components
 ```python
 from ui.base_components import InputFrame
 
 def test_input_frame():
     root = tk.Tk()
     frame = InputFrame(root, [
-        {'label': '名称', 'key': 'name', 'type': 'text'}
+        {'label': 'Name', 'key': 'name', 'type': 'text'}
     ])
     
-    # 获取值
+    # Get values
     values = frame.get_values()
     assert 'name' in values
 ```
 
-## 📚 文档结构
+## 📚 Documentation Structure
 
 ```
 frontend/
 ├── config/
-│   └── app_config.py        # 配置常量
+│   └── app_config.py        # Configuration constants
 │
 ├── services/
-│   └── api_client.py        # API 调用 (60+ 个方法)
+│   └── api_client.py        # API calls (60+ methods)
 │
 ├── ui/
-│   └── base_components.py   # UI 组件 (6 个类)
+│   └── base_components.py   # UI components (6 classes)
 │
 ├── controllers/
-│   ├── tab_controller.py    # 基类
-│   ├── vendor_tab.py        # 供应商
-│   ├── product_tab.py       # 产品
-│   └── other_tabs.py        # 其他
+│   ├── tab_controller.py    # Base class
+│   ├── vendor_tab.py        # Vendors
+│   ├── product_tab.py       # Products
+│   └── other_tabs.py        # Others
 │
-├── main_new.py              # 主应用
-└── gui.py                   # 旧应用 (保留)
+├── main_new.py              # Main application
+└── gui.py                   # Old application (kept)
 ```
 
-## ✅ 迁移清单
+## ✅ Migration Checklist
 
-- [x] 创建 config 层
-- [x] 创建 services 层
-- [x] 创建 UI 层
-- [x] 创建 controllers 层
-- [x] 创建 main_new.py
-- [x] 测试所有功能
-- [x] 编写文档
+- [x] Create config layer
+- [x] Create services layer
+- [x] Create UI layer
+- [x] Create controllers layer
+- [x] Create main_new.py
+- [x] Test all features
+- [x] Write documentation
 
-## 🎯 最佳实践
+## 🎯 Best Practices
 
-### 命名约定
-- 配置: `UPPERCASE_WITH_UNDERSCORES`
-- 类: `PascalCase`
-- 方法/函数: `snake_case`
-- 常量: `CONSTANT_NAME`
+### Naming Conventions
+- Configuration: `UPPERCASE_WITH_UNDERSCORES`
+- Class: `PascalCase`
+- Method/Function: `snake_case`
+- Constants: `CONSTANT_NAME`
 
-### 代码风格
-- 每个文件 < 300 行
-- 每个方法 < 50 行
-- 使用类型提示
-- 添加 docstring
+### Code Style
+- Each file < 300 lines
+- Each method < 50 lines
+- Use type hints
+- Add docstrings
 
-### 错误处理
-- 所有 API 调用都在 try-except 中
-- 显示用户友好的错误信息
-- 记录错误到控制台 (可选)
+### Error Handling
+- All API calls are in a try-except block.
+- Display user-friendly error messages.
+- Log errors to the console (optional).
 
-## 🔗 调用流程
+## 🔗 Call Flow
 
 ```
-User Action (点击按钮)
+User Action (clicks a button)
   ↓
-Controller 响应事件
+Controller responds to the event
   ↓
-Controller 调用 Service (API)
+Controller calls Service (API)
   ↓
-Service 返回数据
+Service returns data
   ↓
-Controller 更新 UI (DataTable)
+Controller updates UI (DataTable)
   ↓
-UI 显示数据
+UI displays data
 ```
 
-## 总结
+## Summary
 
-新的前端架构提供了:
-- ✅ 50% 代码精简
-- ✅ 清晰的层级结构
-- ✅ 高度可复用的组件
-- ✅ 易于扩展和维护
-- ✅ 简洁的用户界面
-- ✅ 专业级的代码质量
+The new frontend architecture provides:
+- ✅ 50% code reduction
+- ✅ Clear layered structure
+- ✅ Highly reusable components
+- ✅ Easy to extend and maintain
+- ✅ Clean user interface
+- ✅ Professional-grade code quality
 
-**现在你有一个优雅、易维护的前端应用! 🎉**
-
+**You now have an elegant, maintainable frontend application! 🎉**

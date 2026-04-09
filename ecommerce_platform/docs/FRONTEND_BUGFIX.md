@@ -1,75 +1,75 @@
-# 前端修复完成 - 快速参考
+# Frontend Fixes Complete - Quick Reference
 
-## 🔧 问题修复
+## 🔧 Issues Fixed
 
-### 问题 1: TabController 初始化错误
-**原因**: 子类 (CustomerTabController, OrderTabController, TransactionTabController) 没有正确调用 super().__init__()
-**解决**: 添加 __init__ 方法正确传递 title 参数
+### Issue 1: TabController Initialization Error
+**Cause**: Subclasses (CustomerTabController, OrderTabController, TransactionTabController) did not correctly call super().__init__()
+**Solution**: Added __init__ method to correctly pass the title parameter
 
-**修复前**:
+**Before Fix**:
 ```python
 class CustomerTabController(TabController):
-    def setup_ui(self):  # ❌ 缺少 __init__
+    def setup_ui(self):  # ❌ Missing __init__
         pass
 ```
 
-**修复后**:
+**After Fix**:
 ```python
 class CustomerTabController(TabController):
     def __init__(self, notebook: ttk.Notebook):
-        super().__init__(notebook, "客户")  # ✅ 正确初始化
+        super().__init__(notebook, "Customers")  # ✅ Correctly initialized
     
     def setup_ui(self):
         pass
 ```
 
-### 问题 2: InputFrame 布局不当
-**原因**: 所有字段在同一行并排，导致超出窗口
-**解决**: 改为竖直布局，每个字段占一行
+### Issue 2: Improper InputFrame Layout
+**Cause**: All fields were packed side-by-side on the same row, causing the window to overflow
+**Solution**: Switched to a vertical layout, with each field on its own row
 
-**修复前**:
+**Before Fix**:
 ```python
 class InputFrame(BaseFrame):
     def __init__(self, parent, fields: List[Dict[str, Any]], **kwargs):
         for field in fields:
-            label.pack(side=tk.LEFT, ...)  # ❌ 所有字段并排
+            label.pack(side=tk.LEFT, ...)  # ❌ All fields side-by-side
             widget.pack(side=tk.LEFT, ...)
 ```
 
-**修复后**:
+**After Fix**:
 ```python
 class InputFrame(BaseFrame):
     def __init__(self, parent, fields: List[Dict[str, Any]], layout: str = "vertical", **kwargs):
         for field in fields:
-            row_frame = ttk.Frame(self)  # ✅ 每个字段一行
+            row_frame = ttk.Frame(self)  # ✅ Each field on its own row
             row_frame.pack(fill=tk.X, padx=5, pady=5)
             label.pack(side=tk.LEFT, ...)
             widget.pack(side=tk.LEFT, ...)
 ```
 
-### 问题 3: main_new.py 中的初始化顺序
-**原因**: 在 load_initial_data() 前传递了空列表给 ProductTabController 等，导致刷新时引用错误
-**解决**: 分开初始化和数据绑定
+### Issue 3: Initialization Order in main_new.py
+**Cause**: Empty lists were passed to ProductTabController, etc., before load_initial_data(), causing reference errors on refresh
+**Solution**: Separated initialization and data binding
 
-**修复前**:
+**Before Fix**:
 ```python
-self.product_tab = ProductTabController(self.notebook, self.vendors)  # ❌ 空列表
-self.product_tab.refresh_products()  # ❌ vendors 还是空的
+self.product_tab = ProductTabController(self.notebook, self.vendors)  # ❌ Empty list
+self.product_tab.refresh_products()  # ❌ vendors is still empty
 ```
 
-**修复后**:
+**After Fix**:
 ```python
-self.product_tab = ProductTabController(self.notebook, [])  # ✅ 传递空列表
+self.product_tab = ProductTabController(self.notebook, [])  # ✅ Pass an empty list
 
-# 后续在 load_initial_data 中：
+# Later in load_initial_data:
 self.vendors = APIClient.get_vendors()
-self.product_tab.vendors = self.vendors  # ✅ 绑定真实数据
+self.product_tab.vendors = self.vendors  # ✅ Bind real data
 self.product_tab.refresh_products()
 ```
 
-## ✅ 验证
+## ✅ Validation
 
-所有 Python 文件编译成功:
+All Python files compile successfully:
 - ✅ main_new.py
 - ✅ config/app_config.py
 - ✅ services/api_client.py
@@ -79,26 +79,25 @@ self.product_tab.refresh_products()
 - ✅ controllers/product_tab.py
 - ✅ controllers/other_tabs.py
 
-## 🚀 启动应用
+## 🚀 Launching the Application
 
 ```bash
-# 确保后端运行
+# Ensure the backend is running
 python backend/main.py
 
-# 在新终端启动前端
+# Start the frontend in a new terminal
 python frontend/main_new.py
 ```
 
-## 📋 主要改进
+## 📋 Key Improvements
 
-1. **正确的继承关系** - 所有子类都正确初始化 TabController
-2. **灵活的表单布局** - InputFrame 支持竖直和水平布局
-3. **延迟绑定** - 数据在加载后再绑定到各个 tab
-4. **模块化设计** - 代码结构清晰，易于维护
+1. **Correct Inheritance** - All subclasses now correctly initialize TabController
+2. **Flexible Form Layout** - InputFrame supports both vertical and horizontal layouts
+3. **Lazy Binding** - Data is bound to tabs after it has been loaded
+4. **Modular Design** - Clear code structure, easy to maintain
 
-## 💡 使用建议
+## 💡 Usage Recommendations
 
-- 使用 `layout="vertical"` 处理多个输入字段的表单
-- 使用 `layout="horizontal"` 处理少数输入字段的对话框
-- 在 setup_ui() 中初始化 UI，在 load_initial_data() 中加载数据
-
+- Use `layout="vertical"` for forms with multiple input fields
+- Use `layout="horizontal"` for dialogs with few input fields
+- Initialize UI in setup_ui(), load data in load_initial_data()

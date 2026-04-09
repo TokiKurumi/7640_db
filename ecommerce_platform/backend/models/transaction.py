@@ -1,5 +1,5 @@
 """
-交易 (Transaction) 数据模型
+Transaction Data Model
 """
 
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 class TransactionResponse(BaseModel):
-    """交易响应模型 - 用于API返回"""
+    """Transaction response model - used for API returns"""
     transaction_id: int
     order_id: int
     vendor_id: int

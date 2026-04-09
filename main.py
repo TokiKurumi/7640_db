@@ -1,30 +1,30 @@
 import pymysql
 from datetime import datetime
 
-# 数据库连接配置（请根据本地MySQL环境修改）
+# Database connection configuration (please modify according to your local MySQL environment)
 DB_CONFIG = {
     "host": "localhost",
-    "user": "root",  # 你的MySQL用户名
-    "password": "123456",  # 你的MySQL密码
+    "user": "root",  # Your MySQL username
+    "password": "123456",  # Your MySQL password
     "database": "ecommerce_platform",
     "charset": "utf8mb4"
 }
 
 
-# 数据库连接工具函数
+# Database connection utility function
 def get_db_connection():
-    """创建并返回MySQL数据库连接"""
+    """Create and return a MySQL database connection"""
     try:
         conn = pymysql.connect(**DB_CONFIG)
         return conn
     except Exception as e:
-        print(f"数据库连接失败：{e}")
+        print(f"Database connection failed: {e}")
         return None
 
 
-# ====================== 1. 供应商管理模块 ======================
+# ====================== 1. Vendor Management Module ======================
 def show_all_vendors():
-    """显示平台所有供应商（要求功能1）"""
+    """Display all vendors on the platform (Requirement 1)"""
     conn = get_db_connection()
     if not conn:
         return
@@ -34,151 +34,151 @@ def show_all_vendors():
             cursor.execute(sql)
             vendors = cursor.fetchall()
             if not vendors:
-                print("平台暂无供应商数据")
+                print("No vendor data on the platform yet")
                 return
-            print("\n===== 平台供应商列表 =====")
+            print("\n===== Platform Vendor List =====")
             for vendor in vendors:
-                print(f"供应商ID：{vendor['vendor_id']} | 商家名称：{vendor['business_name']}")
-                print(f"平均评分：{vendor['avg_rating']} | 地理位置：{vendor['geo_presence']}\n")
+                print(f"Vendor ID: {vendor['vendor_id']} | Business Name: {vendor['business_name']}")
+                print(f"Average Rating: {vendor['avg_rating']} | Geo Presence: {vendor['geo_presence']}\n")
     except Exception as e:
-        print(f"查询供应商失败：{e}")
+        print(f"Failed to query vendors: {e}")
     finally:
         conn.close()
 
 
 def add_new_vendor():
-    """新增供应商入驻平台（要求功能2）"""
+    """Add a new vendor to the platform (Requirement 2)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        print("\n===== 新增供应商入驻 =====")
-        business_name = input("请输入商家名称：").strip()
-        geo_presence = input("请输入商家地理位置：").strip()
+        print("\n===== Add New Vendor =====")
+        business_name = input("Please enter the business name: ").strip()
+        geo_presence = input("Please enter the business geo presence: ").strip()
         if not business_name or not geo_presence:
-            print("商家名称和地理位置为必填项！")
+            print("Business name and geo presence are required!")
             return
 
         with conn.cursor() as cursor:
             sql = "INSERT INTO vendors (business_name, geo_presence) VALUES (%s, %s)"
             cursor.execute(sql, (business_name, geo_presence))
             conn.commit()
-            print(f"供应商【{business_name}】入驻成功！供应商ID：{cursor.lastrowid}")
+            print(f"Vendor [{business_name}] added successfully! Vendor ID: {cursor.lastrowid}")
     except Exception as e:
         conn.rollback()
-        print(f"新增供应商失败：{e}")
+        print(f"Failed to add new vendor: {e}")
     finally:
         conn.close()
 
 
-# ====================== 2. 产品目录管理模块 ======================
+# ====================== 2. Product Catalog Management Module ======================
 def browse_vendor_products():
-    """浏览指定供应商的所有产品（要求功能1）"""
+    """Browse all products of a specified vendor (Requirement 1)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        vendor_id = input("\n请输入要浏览的供应商ID：").strip()
+        vendor_id = input("\nPlease enter the vendor ID to browse: ").strip()
         if not vendor_id.isdigit():
-            print("请输入有效的数字ID！")
+            print("Please enter a valid numeric ID!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 先校验供应商是否存在
+            # First, check if the vendor exists
             cursor.execute("SELECT * FROM vendors WHERE vendor_id = %s", (vendor_id,))
             if not cursor.fetchone():
-                print("该供应商不存在！")
+                print("This vendor does not exist!")
                 return
 
-            # 查询供应商所有产品
+            # Query all products of the vendor
             sql = "SELECT * FROM products WHERE vendor_id = %s ORDER BY product_id ASC"
             cursor.execute(sql, (vendor_id,))
             products = cursor.fetchall()
             if not products:
-                print("该供应商暂无上架产品")
+                print("This vendor has no products listed yet")
                 return
 
-            print(f"\n===== 供应商ID:{vendor_id} 产品列表 =====")
+            print(f"\n===== Vendor ID:{vendor_id} Product List =====")
             for product in products:
                 tags = [product['tag1'], product['tag2'], product['tag3']]
                 valid_tags = [tag for tag in tags if tag]
-                print(f"产品ID：{product['product_id']} | 产品名称：{product['product_name']}")
-                print(f"售价：{product['price']}元 | 库存：{product['stock_quantity']}件")
-                print(f"产品标签：{','.join(valid_tags) if valid_tags else '无'}\n")
+                print(f"Product ID: {product['product_id']} | Product Name: {product['product_name']}")
+                print(f"Price: {product['price']} | Stock: {product['stock_quantity']}")
+                print(f"Product Tags: {','.join(valid_tags) if valid_tags else 'None'}\n")
     except Exception as e:
-        print(f"浏览产品失败：{e}")
+        print(f"Failed to browse products: {e}")
     finally:
         conn.close()
 
 
 def add_new_product():
-    """为供应商新增产品到目录（要求功能2）"""
+    """Add a new product to the catalog for a vendor (Requirement 2)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        print("\n===== 新增产品 =====")
-        vendor_id = input("请输入所属供应商ID：").strip()
-        product_name = input("请输入产品名称：").strip()
-        price = input("请输入产品售价：").strip()
-        stock_quantity = input("请输入产品库存数量：").strip()
-        tag1 = input("请输入产品标签1（选填）：").strip() or None
-        tag2 = input("请输入产品标签2（选填）：").strip() or None
-        tag3 = input("请输入产品标签3（选填）：").strip() or None
+        print("\n===== Add New Product =====")
+        vendor_id = input("Please enter the vendor ID: ").strip()
+        product_name = input("Please enter the product name: ").strip()
+        price = input("Please enter the product price: ").strip()
+        stock_quantity = input("Please enter the product stock quantity: ").strip()
+        tag1 = input("Please enter product tag 1 (optional): ").strip() or None
+        tag2 = input("Please enter product tag 2 (optional): ").strip() or None
+        tag3 = input("Please enter product tag 3 (optional): ").strip() or None
 
-        # 基础校验
+        # Basic validation
         if not vendor_id.isdigit():
-            print("供应商ID必须为有效数字！")
+            print("Vendor ID must be a valid number!")
             return
         if not product_name:
-            print("产品名称为必填项！")
+            print("Product name is required!")
             return
         try:
             price = float(price)
             stock_quantity = int(stock_quantity)
             if price <= 0 or stock_quantity < 0:
-                print("售价必须大于0，库存不能为负数！")
+                print("Price must be greater than 0, and stock cannot be negative!")
                 return
         except ValueError:
-            print("售价和库存必须为有效数字！")
+            print("Price and stock must be valid numbers!")
             return
 
         with conn.cursor() as cursor:
-            # 校验供应商是否存在
+            # Check if the vendor exists
             cursor.execute("SELECT * FROM vendors WHERE vendor_id = %s", (vendor_id,))
             if not cursor.fetchone():
-                print("该供应商不存在，无法新增产品！")
+                print("The vendor does not exist, cannot add product!")
                 return
 
-            # 插入产品
+            # Insert the product
             sql = """
                   INSERT INTO products (vendor_id, product_name, price, stock_quantity, tag1, tag2, tag3)
                   VALUES (%s, %s, %s, %s, %s, %s, %s) \
                   """
             cursor.execute(sql, (vendor_id, product_name, price, stock_quantity, tag1, tag2, tag3))
             conn.commit()
-            print(f"产品【{product_name}】新增成功！产品ID：{cursor.lastrowid}")
+            print(f"Product [{product_name}] added successfully! Product ID: {cursor.lastrowid}")
     except Exception as e:
         conn.rollback()
-        print(f"新增产品失败：{e}")
+        print(f"Failed to add new product: {e}")
     finally:
         conn.close()
 
 
-# ====================== 3. 产品搜索模块 ======================
+# ====================== 3. Product Search Module ======================
 def search_products_by_tag():
-    """按标签/名称搜索产品（要求功能：匹配名称或标签任意部分）"""
+    """Search for products by tag/name (Requirement: match any part of the name or tags)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        keyword = input("\n请输入搜索关键词（匹配产品名称/标签）：").strip()
+        keyword = input("\nPlease enter a search keyword (matches product name/tags): ").strip()
         if not keyword:
-            print("搜索关键词不能为空！")
+            print("Search keyword cannot be empty!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 模糊匹配名称或三个标签的任意部分
+            # Fuzzy match any part of the name or the three tags
             sql = """
                   SELECT p.*, v.business_name \
                   FROM products p \
@@ -193,136 +193,136 @@ def search_products_by_tag():
             cursor.execute(sql, (fuzzy_keyword, fuzzy_keyword, fuzzy_keyword, fuzzy_keyword))
             products = cursor.fetchall()
             if not products:
-                print("未找到匹配的产品")
+                print("No matching products found")
                 return
 
-            print(f"\n===== 关键词「{keyword}」搜索结果 =====")
+            print(f"\n===== Search Results for '{keyword}' =====")
             for product in products:
                 tags = [product['tag1'], product['tag2'], product['tag3']]
                 valid_tags = [tag for tag in tags if tag]
-                print(f"产品ID：{product['product_id']} | 产品名称：{product['product_name']}")
+                print(f"Product ID: {product['product_id']} | Product Name: {product['product_name']}")
                 print(
-                    f"所属商家：{product['business_name']} | 售价：{product['price']}元 | 库存：{product['stock_quantity']}件")
-                print(f"产品标签：{','.join(valid_tags) if valid_tags else '无'}\n")
+                    f"Vendor: {product['business_name']} | Price: {product['price']} | Stock: {product['stock_quantity']}")
+                print(f"Product Tags: {','.join(valid_tags) if valid_tags else 'None'}\n")
     except Exception as e:
-        print(f"产品搜索失败：{e}")
+        print(f"Product search failed: {e}")
     finally:
         conn.close()
 
 
-# ====================== 4. 产品购买&订单管理模块 ======================
+# ====================== 4. Product Purchase & Order Management Module ======================
 def create_order():
-    """产品购买，创建订单（要求功能：记录客户购买产品）"""
+    """Purchase a product, create an order (Requirement: record customer product purchases)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        print("\n===== 创建订单（产品购买） =====")
-        customer_id = input("请输入您的客户ID：").strip()
+        print("\n===== Create Order (Product Purchase) =====")
+        customer_id = input("Please enter your customer ID: ").strip()
         if not customer_id.isdigit():
-            print("客户ID必须为有效数字！")
+            print("Customer ID must be a valid number!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 校验客户是否存在
+            # Check if the customer exists
             cursor.execute("SELECT * FROM customers WHERE customer_id = %s", (customer_id,))
             if not cursor.fetchone():
-                print("该客户不存在！")
+                print("This customer does not exist!")
                 return
 
-            # 创建订单主表
+            # Create the main order table entry
             cursor.execute("INSERT INTO orders (customer_id) VALUES (%s)", (customer_id,))
             order_id = cursor.lastrowid
             total_price = 0.00
 
-            # 循环添加产品到订单
+            # Loop to add products to the order
             while True:
-                product_id = input("\n请输入要购买的产品ID（输入0结束选购）：").strip()
+                product_id = input("\nPlease enter the ID of the product to purchase (enter 0 to finish shopping): ").strip()
                 if product_id == "0":
                     break
                 if not product_id.isdigit():
-                    print("产品ID必须为有效数字！")
+                    print("Product ID must be a valid number!")
                     continue
 
-                # 校验产品是否存在、库存是否充足
+                # Check if the product exists and has sufficient stock
                 cursor.execute("SELECT * FROM products WHERE product_id = %s", (product_id,))
                 product = cursor.fetchone()
                 if not product:
-                    print("该产品不存在！")
+                    print("This product does not exist!")
                     continue
 
                 try:
-                    quantity = int(input(f"请输入「{product['product_name']}」购买数量：").strip())
+                    quantity = int(input(f"Please enter the quantity for '{product['product_name']}': ").strip())
                     if quantity <= 0:
-                        print("购买数量必须大于0！")
+                        print("Purchase quantity must be greater than 0!")
                         continue
                     if quantity > product['stock_quantity']:
-                        print(f"库存不足！当前库存仅{product['stock_quantity']}件")
+                        print(f"Insufficient stock! Current stock is only {product['stock_quantity']}")
                         continue
                 except ValueError:
-                    print("购买数量必须为有效数字！")
+                    print("Purchase quantity must be a valid number!")
                     continue
 
-                # 计算订单项金额，添加到订单详情
+                # Calculate the item total and add to order details
                 item_price = product['price']
                 item_total = item_price * quantity
                 total_price += item_total
 
-                # 插入订单项
+                # Insert the order item
                 item_sql = """
                            INSERT INTO order_items (order_id, product_id, vendor_id, quantity, item_price)
                            VALUES (%s, %s, %s, %s, %s) \
                            """
                 cursor.execute(item_sql, (order_id, product_id, product['vendor_id'], quantity, item_price))
 
-                # 扣减产品库存
+                # Deduct product stock
                 cursor.execute(
                     "UPDATE products SET stock_quantity = stock_quantity - %s WHERE product_id = %s",
                     (quantity, product_id)
                 )
-                print(f"产品「{product['product_name']}」已添加到订单！")
+                print(f"Product '{product['product_name']}' has been added to the order!")
 
-            # 订单无产品，取消创建
+            # If no products in the order, cancel creation
             if total_price <= 0:
                 conn.rollback()
-                print("未选购任何产品，订单已取消")
+                print("No products selected, order has been cancelled")
                 return
 
-            # 更新订单总价
+            # Update the total price of the order
             cursor.execute("UPDATE orders SET total_price = %s WHERE order_id = %s", (total_price, order_id))
             conn.commit()
-            print(f"\n订单创建成功！订单ID：{order_id} | 订单总价：{total_price}元")
-            print("请完成支付，支付后订单将进入待发货状态")
+            print(f"\nOrder created successfully! Order ID: {order_id} | Total Price: {total_price}")
+            print("Please complete the payment. After payment, the order will be in 'pending_shipment' status")
     except Exception as e:
         conn.rollback()
-        print(f"创建订单失败：{e}")
+        print(f"Failed to create order: {e}")
     finally:
         conn.close()
 
 
 def pay_order():
-    """订单支付，生成交易记录（匹配transaction要求）"""
+    """Pay for an order, generate transaction records (matches transaction requirement)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        order_id = input("\n请输入要支付的订单ID：").strip()
+        order_id = input("\nPlease enter the order ID to pay for: ").strip()
         if not order_id.isdigit():
-            print("订单ID必须为有效数字！")
+            print("Order ID must be a valid number!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 校验订单
+            # Check the order
             cursor.execute("SELECT * FROM orders WHERE order_id = %s", (order_id,))
             order = cursor.fetchone()
             if not order:
-                print("该订单不存在！")
+                print("This order does not exist!")
                 return
             if order['order_status'] != 'pending_payment':
-                print("仅待付款状态的订单可支付！")
+                print("Only orders in 'pending_payment' status can be paid for!")
                 return
 
-            # 按供应商分组，生成交易记录（一个订单跨多个供应商时，每个供应商对应一条交易）
+            # Group by vendor to generate transaction records (one transaction per vendor for orders spanning multiple vendors)
             cursor.execute("""
                            SELECT vendor_id, SUM(item_price * quantity) as vendor_total
                            FROM order_items
@@ -331,7 +331,7 @@ def pay_order():
                            """, (order_id,))
             vendor_trans = cursor.fetchall()
 
-            # 插入交易记录
+            # Insert transaction records
             for trans in vendor_trans:
                 trans_sql = """
                             INSERT INTO transactions (order_id, customer_id, vendor_id, transaction_amount)
@@ -342,46 +342,46 @@ def pay_order():
                     trans['vendor_id'], trans['vendor_total']
                 ))
 
-            # 更新订单状态为待发货
+            # Update order status to 'pending_shipment'
             cursor.execute(
                 "UPDATE orders SET order_status = 'pending_shipment' WHERE order_id = %s",
                 (order_id,)
             )
             conn.commit()
-            print(f"订单ID:{order_id} 支付成功！已生成对应交易记录，订单进入待发货状态")
+            print(f"Order ID:{order_id} payment successful! Corresponding transaction records have been generated, and the order is now pending shipment.")
     except Exception as e:
         conn.rollback()
-        print(f"订单支付失败：{e}")
+        print(f"Order payment failed: {e}")
     finally:
         conn.close()
 
 
 def query_customer_orders():
-    """查询客户的订单历史（匹配customer基础要求）"""
+    """Query a customer's order history (matches basic customer requirement)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        customer_id = input("\n请输入客户ID：").strip()
+        customer_id = input("\nPlease enter customer ID: ").strip()
         if not customer_id.isdigit():
-            print("客户ID必须为有效数字！")
+            print("Customer ID must be a valid number!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 查询客户所有订单
+            # Query all of the customer's orders
             sql = "SELECT * FROM orders WHERE customer_id = %s ORDER BY order_date DESC"
             cursor.execute(sql, (customer_id,))
             orders = cursor.fetchall()
             if not orders:
-                print("该客户暂无订单记录")
+                print("This customer has no order history yet")
                 return
 
-            print(f"\n===== 客户ID:{customer_id} 订单历史 =====")
+            print(f"\n===== Customer ID:{customer_id} Order History =====")
             for order in orders:
-                print(f"\n订单ID：{order['order_id']} | 下单时间：{order['order_date']}")
-                print(f"订单总价：{order['total_price']}元 | 订单状态：{order['order_status']}")
+                print(f"\nOrder ID: {order['order_id']} | Order Date: {order['order_date']}")
+                print(f"Total Price: {order['total_price']} | Order Status: {order['order_status']}")
 
-                # 查询订单详情
+                # Query order details
                 cursor.execute("""
                                SELECT oi.*, p.product_name, v.business_name
                                FROM order_items oi
@@ -390,48 +390,48 @@ def query_customer_orders():
                                WHERE oi.order_id = %s
                                """, (order['order_id'],))
                 items = cursor.fetchall()
-                print("订单商品明细：")
+                print("Order Item Details:")
                 for item in items:
-                    print(f"- 商家：{item['business_name']} | 商品：{item['product_name']}")
+                    print(f"- Vendor: {item['business_name']} | Product: {item['product_name']}")
                     print(
-                        f"  单价：{item['item_price']}元 | 数量：{item['quantity']}件 | 小计：{item['item_price'] * item['quantity']}元")
+                        f"  Unit Price: {item['item_price']} | Quantity: {item['quantity']} | Subtotal: {item['item_price'] * item['quantity']}")
     except Exception as e:
-        print(f"查询订单失败：{e}")
+        print(f"Failed to query orders: {e}")
     finally:
         conn.close()
 
 
-# ====================== 5. 订单修改模块 ======================
+# ====================== 5. Order Modification Module ======================
 def modify_order():
-    """修改订单（要求功能：发货前删除产品/取消整个订单）"""
+    """Modify an order (Requirement: delete a product/cancel the entire order before shipment)"""
     conn = get_db_connection()
     if not conn:
         return
     try:
-        order_id = input("\n请输入要修改的订单ID：").strip()
+        order_id = input("\nPlease enter the order ID to modify: ").strip()
         if not order_id.isdigit():
-            print("订单ID必须为有效数字！")
+            print("Order ID must be a valid number!")
             return
 
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            # 校验订单状态：仅待发货状态可修改（发货前）
+            # Check order status: only 'pending_shipment' status can be modified (before shipment)
             cursor.execute("SELECT * FROM orders WHERE order_id = %s", (order_id,))
             order = cursor.fetchone()
             if not order:
-                print("该订单不存在！")
+                print("This order does not exist!")
                 return
             if order['order_status'] != 'pending_shipment':
-                print("仅待发货状态（发货前）的订单可修改！")
+                print("Only orders in 'pending_shipment' status (before shipment) can be modified!")
                 return
 
-            # 操作菜单
-            print("\n===== 订单修改操作 =====")
-            print("1 - 删除订单内指定商品")
-            print("2 - 取消整个订单")
-            choice = input("请选择操作（输入数字）：").strip()
+            # Operation menu
+            print("\n===== Order Modification Operations =====")
+            print("1 - Delete a specific product from the order")
+            print("2 - Cancel the entire order")
+            choice = input("Please select an operation (enter a number): ").strip()
 
             if choice == "1":
-                # 先展示订单内商品
+                # First, display the products in the order
                 cursor.execute("""
                                SELECT oi.order_item_id, oi.product_id, p.product_name, oi.quantity
                                FROM order_items oi
@@ -440,20 +440,20 @@ def modify_order():
                                """, (order_id,))
                 items = cursor.fetchall()
                 if not items:
-                    print("订单内无商品，无法修改")
+                    print("No products in the order, cannot modify")
                     return
 
-                print("\n订单内商品列表：")
+                print("\nProduct list in the order:")
                 for item in items:
                     print(
-                        f"订单项ID：{item['order_item_id']} | 产品ID：{item['product_id']} | 产品名称：{item['product_name']} | 数量：{item['quantity']}件")
+                        f"Order Item ID: {item['order_item_id']} | Product ID: {item['product_id']} | Product Name: {item['product_name']} | Quantity: {item['quantity']}")
 
-                item_id = input("\n请输入要删除的订单项ID：").strip()
+                item_id = input("\nPlease enter the order item ID to delete: ").strip()
                 if not item_id.isdigit():
-                    print("订单项ID必须为有效数字！")
+                    print("Order item ID must be a valid number!")
                     return
 
-                # 校验订单项是否属于该订单
+                # Check if the order item belongs to this order
                 cursor.execute("""
                                SELECT *
                                FROM order_items
@@ -462,19 +462,19 @@ def modify_order():
                                """, (item_id, order_id))
                 target_item = cursor.fetchone()
                 if not target_item:
-                    print("该订单项不属于当前订单！")
+                    print("This order item does not belong to the current order!")
                     return
 
-                # 恢复商品库存
+                # Restore product stock
                 cursor.execute(
                     "UPDATE products SET stock_quantity = stock_quantity + %s WHERE product_id = %s",
                     (target_item['quantity'], target_item['product_id'])
                 )
 
-                # 删除订单项
+                # Delete the order item
                 cursor.execute("DELETE FROM order_items WHERE order_item_id = %s", (item_id,))
 
-                # 重新计算订单总价
+                # Recalculate the order total
                 cursor.execute("""
                                SELECT SUM(item_price * quantity) as new_total
                                FROM order_items
@@ -482,18 +482,18 @@ def modify_order():
                                """, (order_id,))
                 new_total = cursor.fetchone()['new_total'] or 0.00
 
-                # 订单无商品，自动取消
+                # If no products left in the order, cancel it automatically
                 if new_total <= 0:
                     cursor.execute("UPDATE orders SET order_status = 'cancelled', total_price = 0 WHERE order_id = %s",
                                    (order_id,))
-                    # 删除对应交易记录
+                    # Delete corresponding transaction records
                     cursor.execute("DELETE FROM transactions WHERE order_id = %s", (order_id,))
                     conn.commit()
-                    print("订单内已无商品，订单已自动取消")
+                    print("There are no items left in the order, and the order has been automatically cancelled.")
                 else:
-                    # 更新订单总价
+                    # Update order total price
                     cursor.execute("UPDATE orders SET total_price = %s WHERE order_id = %s", (new_total, order_id))
-                    # 更新对应交易金额
+                    # Update corresponding transaction amounts
                     cursor.execute("""
                                    SELECT vendor_id, SUM(item_price * quantity) as vendor_total
                                    FROM order_items
@@ -509,11 +509,11 @@ def modify_order():
                                          AND vendor_id = %s
                                        """, (trans['vendor_total'], order_id, trans['vendor_id']))
                     conn.commit()
-                    print(f"订单项删除成功！订单最新总价：{new_total}元")
+                    print(f"Order item deleted successfully! The new order total is: {new_total} yuan")
 
             elif choice == "2":
-                # 取消整个订单：恢复库存、更新状态、删除交易记录
-                # 恢复所有商品库存
+                # Cancel the entire order: restore stock, update status, delete transaction records
+                # Restore stock for all products
                 cursor.execute("""
                                UPDATE products p
                                    JOIN order_items oi
@@ -522,47 +522,47 @@ def modify_order():
                                WHERE oi.order_id = %s
                                """, (order_id,))
 
-                # 更新订单状态为已取消
+                # Update order status to 'cancelled'
                 cursor.execute(
                     "UPDATE orders SET order_status = 'cancelled' WHERE order_id = %s",
                     (order_id,)
                 )
 
-                # 删除对应交易记录
+                # Delete corresponding transaction records
                 cursor.execute("DELETE FROM transactions WHERE order_id = %s", (order_id,))
                 conn.commit()
-                print(f"订单ID:{order_id} 已成功取消，商品库存已恢复")
+                print(f"Order ID:{order_id} has been successfully cancelled, and product stock has been restored")
             else:
-                print("无效的操作选择！")
+                print("Invalid operation choice!")
     except Exception as e:
         conn.rollback()
-        print(f"订单修改失败：{e}")
+        print(f"Failed to modify order: {e}")
     finally:
         conn.close()
 
 
-# ====================== 主程序命令行菜单 ======================
+# ====================== Main Program Command Line Menu ======================
 def main_menu():
-    """主程序入口，命令行交互菜单"""
+    """Main program entry point, command line interactive menu"""
     print("=" * 50)
-    print("  COMP7640 多供应商电商平台 基础功能系统")
+    print("  COMP7640 Multi-vendor E-commerce Platform Basic Function System")
     print("=" * 50)
     while True:
-        print("\n===== 主功能菜单 =====")
-        print("1. 供应商管理 - 查看所有供应商")
-        print("2. 供应商管理 - 新增供应商入驻")
-        print("3. 产品管理 - 浏览指定供应商的产品")
-        print("4. 产品管理 - 新增产品到供应商目录")
-        print("5. 产品搜索 - 按关键词搜索产品")
-        print("6. 订单管理 - 创建订单（购买产品）")
-        print("7. 订单管理 - 订单支付（生成交易记录）")
-        print("8. 订单管理 - 查询客户订单历史")
-        print("9. 订单管理 - 修改/取消订单（发货前）")
-        print("0. 退出系统")
+        print("\n===== Main Menu =====")
+        print("1. Vendor Management - View All Vendors")
+        print("2. Vendor Management - Add New Vendor")
+        print("3. Product Management - Browse Products of a Specific Vendor")
+        print("4. Product Management - Add New Product to Vendor's Catalog")
+        print("5. Product Search - Search Products by Keyword")
+        print("6. Order Management - Create Order (Purchase Product)")
+        print("7. Order Management - Pay for Order (Generate Transaction)")
+        print("8. Order Management - Query Customer Order History")
+        print("9. Order Management - Modify/Cancel Order (Before Shipment)")
+        print("0. Exit System")
 
-        choice = input("\n请选择操作（输入对应数字）：").strip()
+        choice = input("\nPlease select an operation (enter the corresponding number): ").strip()
         if choice == "0":
-            print("感谢使用，系统已退出")
+            print("Thank you for using the system. Exiting.")
             break
         elif choice == "1":
             show_all_vendors()
@@ -583,9 +583,9 @@ def main_menu():
         elif choice == "9":
             modify_order()
         else:
-            print("无效的选择，请输入菜单内的数字！")
+            print("Invalid choice, please enter a number from the menu!")
 
 
-# 程序启动入口
+# Program entry point
 if __name__ == "__main__":
     main_menu()

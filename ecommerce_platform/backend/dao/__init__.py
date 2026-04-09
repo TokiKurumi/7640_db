@@ -1,6 +1,6 @@
 """
-数据库访问层 - DAO (Data Access Object)
-提供与数据库的直接交互
+Database Access Layer - DAO (Data Access Object)
+Provides direct interaction with the database
 """
 
 import pymysql
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConfig:
-    """数据库配置"""
+    """Database configuration"""
     def __init__(self, host='localhost', port=3306, user='root', password='',
                  database='ecommerce_platform', charset='utf8mb4'):
         self.host = host
@@ -35,21 +35,21 @@ class DatabaseConfig:
 
 
 class BaseDAO:
-    """基础DAO类 - 提供通用的数据库操作"""
+    """Base DAO class - provides common database operations"""
 
     def __init__(self, config: DatabaseConfig):
         self.config = config
 
     def get_connection(self):
-        """获取数据库连接"""
+        """Get a database connection"""
         try:
             return pymysql.connect(**self.config.to_dict())
         except Exception as e:
-            logger.error(f"数据库连接失败: {str(e)}")
+            logger.error(f"Database connection failed: {str(e)}")
             raise
 
     def execute_query(self, query: str, params: tuple = (), fetch_one: bool = False) -> Any:
-        """执行查询语句"""
+        """Execute a query statement"""
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
@@ -61,11 +61,11 @@ class BaseDAO:
             conn.close()
             return result
         except Exception as e:
-            logger.error(f"查询执行失败: {str(e)}")
+            logger.error(f"Query execution failed: {str(e)}")
             raise
 
     def execute_update(self, query: str, params: tuple = ()) -> Tuple[int, int]:
-        """执行更新/插入/删除语句"""
+        """Execute an update/insert/delete statement"""
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
@@ -77,11 +77,11 @@ class BaseDAO:
             return affected_rows, last_id
         except Exception as e:
             conn.rollback()
-            logger.error(f"更新执行失败: {str(e)}")
+            logger.error(f"Update execution failed: {str(e)}")
             raise
 
     def execute_transaction(self, operations: List[Tuple[str, tuple]]) -> bool:
-        """执行事务操作"""
+        """Execute a transactional operation"""
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
@@ -92,5 +92,5 @@ class BaseDAO:
             return True
         except Exception as e:
             conn.rollback()
-            logger.error(f"事务执行失败: {str(e)}")
+            logger.error(f"Transaction execution failed: {str(e)}")
             raise

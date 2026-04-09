@@ -1,230 +1,230 @@
-# 前端 GUI 三大问题修复总结
+# Frontend GUI: Summary of Three Major Bug Fixes
 
-## 🎯 问题概览
+## 🎯 Problem Overview
 
-| 问题 | 症状 | 根本原因 | 修复方案 | 状态 |
-|-----|------|--------|--------|------|
-| **问题1** | "invalid literal for int()" | 字符串解析错误 | 改进字符串分割算法 | ✅ 已修复 |
-| **问题2** | "至少需要一个商品" 错误 | items_table 未被 pack | 添加 pack() + 完整状态管理 | ✅ 已修复 |
-| **问题3** | GUI 经常无响应 | API 调用阻塞 UI 线程 | 实现异步 API 调用 | ✅ 已修复 |
+| Problem | Symptom | Root Cause | Solution | Status |
+|---|---|---|---|---|
+| **Problem 1** | "invalid literal for int()" | String parsing error | Improved string splitting algorithm | ✅ Fixed |
+| **Problem 2** | "At least one item required" error | `items_table` was not packed | Added `pack()` + complete state management | ✅ Fixed |
+| **Problem 3** | GUI frequently unresponsive | API calls blocking UI thread | Implemented asynchronous API calls | ✅ Fixed |
 
 ---
 
-## ✅ 问题1：添加项按钮报错 `invalid literal for int()`
+## ✅ Problem 1: "Add Item" button error `invalid literal for int()`
 
-### 错误信息
+### Error Message
 ```
 invalid literal for int() with base 10: '2) USB-C Charging Cable -¥49.99
 ```
 
-### 根本原因
-产品选项的格式不正确，导致字符串分割失败：
+### Root Cause
+The product option format was incorrect, causing string splitting to fail:
 ```python
-# 原来的格式（有问题）
+# Original format (problematic)
 "(ID:2) USB-C Charging Cable - ¥49.99"
-# 当使用 split("(ID:")[1].rstrip(")") 时，得到 "2) USB-C Charging Cable - ¥49.99"
-# 这不是一个有效的 ID！
+# When using split("(ID:")[1].rstrip(")"), it results in "2) USB-C Charging Cable - ¥49.99"
+# This is not a valid ID!
 ```
 
-### 解决方案
+### Solution
 
-#### 方案 A：改进字符串格式（已采用）
+#### Option A: Improved String Format (Adopted)
 ```python
-# 改后的产品选项格式（简化）
+# Revised product option format (simplified)
 "USB-C Charging Cable (ID:2)"
 
-# 新的解析方式（更安全）
+# New parsing method (safer)
 product_id_str = product_str.split("(ID:")[-1].rstrip(")")
-product_id = int(product_id_str)  # ✅ 正确：2
+product_id = int(product_id_str) # ✅ Correct: 2
 ```
 
-**优势**：
-- 只从右边查找 "(ID:"，避免产品名称中含有括号的问题
-- 格式更清晰：产品名称 + ID，符合自然阅读习惯
-- 解析更简洁、更健壮
+**Advantages**:
+- Searches for "(ID:" only from the right, avoiding issues with parentheses in product names
+- Clearer format: Product Name + ID, follows natural reading order
+- More concise and robust parsing
 
-#### 代码改动位置
+#### Code Change Location
 ```python
-# controllers/other_tabs.py - show_create_dialog() 方法
+# controllers/other_tabs.py - show_create_dialog() method
 
-# 原来
+# Original
 product_options = [f"(ID:{p['product_id']}) {p['product_name']} - ¥{p['listed_price']}" for p in self.products]
 
-# 改后
+# Revised
 product_options = [f"{p['product_name']} (ID:{p['product_id']})" for p in self.products]
 ```
 
 ---
 
-## ✅ 问题2：创建订单报错 "至少需要一个商品"
+## ✅ Problem 2: "At least one item required" error when creating an order
 
-### 错误信息
+### Error Message
 ```
-错误: 订单至少需要一个商品
+Error: At least one item is required for an order
 ```
 
-### 根本原因 - 两个问题的组合
+### Root Cause - A Combination of Two Issues
 
-**问题 2a：items_table 没有被 pack**
+**Problem 2a: `items_table` was not packed**
 ```python
-# 原来（有问题）
-items_table = DataTable(dialog, columns=["产品ID", "数量"], title="订单项")
-# ❌ 表格被创建但不显示，因为没有 pack()
+# Original (problematic)
+items_table = DataTable(dialog, columns=["Product ID", "Quantity"], title="Order Items")
+# ❌ The table was created but not displayed because pack() was missing
 
-# 改后
+# Revised
 items_table = DataTable(...)
-items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)  # ✅ 现在显示了
+items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5) # ✅ Now it's displayed
 ```
 
-**问题 2b：添加项按钮没有引用正确的 items_table**
+**Problem 2b: "Add Item" button did not reference the correct `items_table`**
 ```python
-# 原来（有问题）
-ttk.Button(action_frame, text="添加项", command=lambda: self._add_order_item(fields_frame, dialog))
-# ❌ 传入 dialog，但 _add_order_item 需要 items_table
+# Original (problematic)
+ttk.Button(action_frame, text="Add Item", command=lambda: self._add_order_item(fields_frame, dialog))
+# ❌ Passed `dialog`, but `_add_order_item` needs `items_table`
 
-# 改后
-ttk.Button(action_frame, text="添加项", command=lambda: self._add_order_item(fields_frame, items_table))
-# ✅ 现在传入正确的表格对象
+# Revised
+ttk.Button(action_frame, text="Add Item", command=lambda: self._add_order_item(fields_frame, items_table))
+# ✅ Now passes the correct table object
 ```
 
-**问题 2c：items_table 没有被显示地更新**
+**Problem 2c: `items_table` was not explicitly updated**
 ```python
-# 原来（有问题）
+# Original (problematic)
 self.order_items.append(...)
-# ❌ 只添加到列表，不显示在表格中
+# ❌ Only added to the list, not displayed in the table
 
-# 改后
+# Revised
 self.order_items.append({...})
-items_table.add_row([...])  # ✅ 同时添加到表格显示
+items_table.add_row([...]) # ✅ Also added to the table for display
 ```
 
-### 解决方案
+### Solution
 
-#### 改进后的 `_add_order_item` 方法
+#### Improved `_add_order_item` Method
 ```python
 def _add_order_item(self, fields_frame, items_table):
-    """添加订单项"""
+    """Add an order item"""
     values = fields_frame.get_values()
     try:
-        # 1. 解析产品 ID（使用改进的分割算法）
+        # 1. Parse Product ID (using the improved splitting algorithm)
         product_str = values['product']
         product_id_str = product_str.split("(ID:")[-1].rstrip(")")
         product_id = int(product_id_str)
         
-        # 2. 验证数量有效性
+        # 2. Validate quantity
         quantity = int(values['quantity'])
         if quantity <= 0:
-            DialogHelper.show_error("错误", "数量必须大于0")
+            DialogHelper.show_error("Error", "Quantity must be greater than 0")
             return
         
-        # 3. 获取产品信息用于显示
-        product_name = next((p['product_name'] for p in self.products if p['product_id'] == product_id), "未知")
+        # 3. Get product info for display
+        product_name = next((p['product_name'] for p in self.products if p['product_id'] == product_id), "Unknown")
         
-        # 4. 同时添加到内存和 UI 表格
+        # 4. Add to both memory and UI table
         self.order_items.append({
             'product_id': product_id,
             'quantity': quantity
         })
         items_table.add_row([product_name, product_id, quantity])
         
-        # 5. 显示成功提示
-        DialogHelper.show_success("成功", f"已添加 {product_name} x{quantity}")
+        # 5. Show success message
+        DialogHelper.show_success("Success", f"Added {product_name} x{quantity}")
         fields_frame.clear_values()
     except ValueError as e:
-        DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+        DialogHelper.show_error("Error", f"Input format error: {str(e)}")
     except Exception as e:
-        DialogHelper.show_error("错误", f"添加失败: {str(e)}")
+        DialogHelper.show_error("Error", f"Failed to add: {str(e)}")
 ```
 
-#### 改进后的 `_create_order` 方法
+#### Improved `_create_order` Method
 ```python
 def _create_order(self, fields_frame, dialog):
-    """创建订单"""
-    # 1. 检查订单项是否为空（双重检查）
+    """Create an order"""
+    # 1. Check if order items are empty (double-check)
     if not self.order_items or len(self.order_items) == 0:
-        DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
+        DialogHelper.show_error("Error", "Please add at least one item to the order first")
         return
     
     values = fields_frame.get_values()
     try:
-        # 2. 解析客户 ID
+        # 2. Parse Customer ID
         customer_str = values['customer']
         customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
         customer_id = int(customer_id_str)
         
-        # 3. 在发送前备份订单项（防止期间被修改）
+        # 3. Back up order items before sending (to prevent modification)
         items_to_create = self.order_items.copy()
         
-        # 4. 异步创建（后面讲）
+        # 4. Create asynchronously (discussed later)
         AsyncAPIClient.create_order_async(customer_id, items_to_create, on_success, on_error)
     except ValueError as e:
-        DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+        DialogHelper.show_error("Error", f"Input format error: {str(e)}")
     except Exception as e:
-        DialogHelper.show_error("错误", f"创建订单失败: {str(e)}")
+        DialogHelper.show_error("Error", f"Failed to create order: {str(e)}")
 ```
 
-#### 关键改动总结
-| 改动点 | 效果 |
-|------|------|
-| 产品选项格式：`"{name} (ID:{id})"` | 更清晰，避免解析错误 |
-| items_table 被 pack | 表格现在可见 |
-| _add_order_item 获得 items_table 引用 | 能够更新表格显示 |
-| 双重检查 self.order_items | 防止创建空订单 |
-| 数量验证（> 0） | 防止无效数据 |
+#### Key Change Summary
+| Change | Effect |
+|---|---|
+| Product option format: `"{name} (ID:{id})"` | Clearer, avoids parsing errors |
+| `items_table` is packed | Table is now visible |
+| `_add_order_item` gets `items_table` reference | Can update the table display |
+| Double-check `self.order_items` | Prevents creating empty orders |
+| Quantity validation (> 0) | Prevents invalid data |
 
 ---
 
-## ✅ 问题3：GUI 经常无响应（UI 线程阻塞）
+## ✅ Problem 3: GUI Frequently Unresponsive (UI Thread Blocking)
 
-### 症状
+### Symptom
 ```
-用户点击按钮 → 几秒无响应 → 突然卡死 → 等一会后恢复
+User clicks a button -> Unresponsive for a few seconds -> Suddenly freezes -> Recovers after a while
 ```
 
-### 根本原因
-所有 API 调用都在 **UI 线程**中同步执行，导致：
-1. 网络请求期间 UI 被阻塞
-2. 用户点击事件无法处理
-3. 窗口显示为 "未响应"
+### Root Cause
+All API calls were executed synchronously in the **UI thread**, causing:
+1. The UI to be blocked during network requests
+2. User click events could not be processed
+3. The window was displayed as "Not Responding"
 
 ```python
-# ❌ 这会阻塞 UI！
+# ❌ This blocks the UI!
 def load_initial_data(self):
-    self.vendors = APIClient.get_vendors()  # 等待 1-2 秒
-    self.products = APIClient.get_products()  # 等待 1-2 秒
-    self.customers = APIClient.get_customers()  # 等待 1-2 秒
-    # 总计 3-6 秒 UI 无响应！
+    self.vendors = APIClient.get_vendors() # Waits 1-2 seconds
+    self.products = APIClient.get_products() # Waits 1-2 seconds
+    self.customers = APIClient.get_customers() # Waits 1-2 seconds
+    # Total of 3-6 seconds of UI unresponsiveness!
 ```
 
-### 解决方案：异步 API 调用
+### Solution: Asynchronous API Calls
 
-#### 步骤1：创建异步 API 包装类
+#### Step 1: Create an Asynchronous API Wrapper Class
 ```python
 # services/async_api_client.py
 class AsyncAPIClient:
     @staticmethod
     def call_async(func, args=(), kwargs=None, on_success=None, on_error=None):
-        """在后台线程中异步执行 API 调用"""
+        """Asynchronously execute an API call in a background thread"""
         def worker():
             try:
                 result = func(*args, **kwargs)
                 if on_success:
-                    on_success(result)  # 回调处理结果
+                    on_success(result) # Callback to handle the result
             except Exception as e:
                 if on_error:
-                    on_error(e)  # 回调处理错误
+                    on_error(e) # Callback to handle errors
         
-        # 在后台线程执行，不阻塞 UI
+        # Execute in a background thread, does not block the UI
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
 ```
 
-#### 步骤2：更新主程序使用异步调用
+#### Step 2: Update the Main Program to Use Asynchronous Calls
 ```python
 # main_new.py
 def load_initial_data(self):
-    """加载初始数据（异步）"""
-    self.update_status("加载数据中...")
+    """Load initial data (asynchronously)"""
+    self.update_status("Loading data...")
     self.load_count = 0
     self.load_total = 3
     
@@ -233,262 +233,261 @@ def load_initial_data(self):
         self._on_data_loaded()
     
     def on_error(error):
-        DialogHelper.show_error("错误", f"加载失败: {str(error)}")
+        DialogHelper.show_error("Error", f"Failed to load: {str(error)}")
     
-    # ✅ 这三个调用会并行执行，不阻塞 UI！
+    # ✅ These three calls will execute in parallel, without blocking the UI!
     AsyncAPIClient.get_vendors_async(on_vendors_loaded, on_error)
     AsyncAPIClient.get_products_async(on_products_loaded, on_error)
     AsyncAPIClient.get_customers_async(on_customers_loaded, on_error)
 
 def _on_data_loaded(self):
-    """数据加载回调"""
+    """Data loading callback"""
     self.load_count += 1
     if self.load_count == self.load_total:
-        # 所有数据都加载完成时，更新 UI
+        # Update the UI when all data is loaded
         self.refresh_all_tabs()
 ```
 
-#### 步骤3：异步搜索
+#### Step 3: Asynchronous Search
 ```python
 # controllers/product_tab.py
 def search():
     tag = search_entry.get().strip()
     
     def on_success(results):
-        # 搜索完成，更新 UI
+        # Search complete, update the UI
         display_results(results)
     
     def on_error(error):
-        DialogHelper.show_error("错误", str(error))
+        DialogHelper.show_error("Error", str(error))
     
-    # ✅ 搜索在后台执行，UI 保持响应
+    # ✅ Search executes in the background, UI remains responsive
     AsyncAPIClient.search_products_async(tag, on_success, on_error)
 ```
 
-#### 步骤4：异步创建订单
+#### Step 4: Asynchronous Order Creation
 ```python
 # controllers/other_tabs.py
 def _create_order(self, fields_frame, dialog):
-    # ... 验证逻辑 ...
+    # ... validation logic ...
     
     def on_success(result):
-        DialogHelper.show_success("成功", "订单创建成功")
+        DialogHelper.show_success("Success", "Order created successfully")
         dialog.destroy()
         self.refresh_orders()
     
     def on_error(error):
-        DialogHelper.show_error("错误", str(error))
+        DialogHelper.show_error("Error", str(error))
     
-    # ✅ 创建在后台执行，UI 保持响应
+    # ✅ Creation executes in the background, UI remains responsive
     AsyncAPIClient.create_order_async(customer_id, items, on_success, on_error)
 ```
 
-### 性能改进
+### Performance Improvement
 
-| 操作 | 原来（同步） | 改后（异步） | 改进 |
-|-----|-----------|-----------|------|
-| 初始数据加载 | 3-6 秒阻塞 | <1 秒 UI 响应 | ✅ 3-6 倍 |
-| 搜索查询 | 1-2 秒阻塞 | <0.1 秒 UI 响应 | ✅ 10+ 倍 |
-| 创建订单 | 1-2 秒阻塞 | <0.1 秒 UI 响应 | ✅ 10+ 倍 |
-| 整体体验 | 频繁卡顿 | 流畅无卡顿 | ✅ 显著改进 |
+| Operation | Original (Synchronous) | Revised (Asynchronous) | Improvement |
+|---|---|---|---|
+| Initial Data Load | 3-6s blocking | <1s UI response | ✅ 3-6x |
+| Search Query | 1-2s blocking | <0.1s UI response | ✅ 10+x |
+| Create Order | 1-2s blocking | <0.1s UI response | ✅ 10+x |
+| Overall Experience | Frequent freezes | Smooth, no freezes | ✅ Significant improvement |
 
 ---
 
-## 📋 修改清单
+## 📋 Change Checklist
 
-### 新增文件
+### New Files
 ```
-frontend/services/async_api_client.py  (异步 API 包装类)
-```
-
-### 修改文件
-```
-frontend/main_new.py                    (使用异步加载)
-frontend/controllers/product_tab.py     (异步搜索)
-frontend/controllers/other_tabs.py      (异步订单创建)
+frontend/services/async_api_client.py (Asynchronous API wrapper class)
 ```
 
-### 关键改动
+### Modified Files
+```
+frontend/main_new.py (Using asynchronous loading)
+frontend/controllers/product_tab.py (Asynchronous search)
+frontend/controllers/other_tabs.py (Asynchronous order creation)
+```
 
-#### 文件：`frontend/services/async_api_client.py`（新增）
-- 新增 `AsyncAPIClient` 类
-- 支持异步执行任何 APIClient 方法
-- 提供成功/失败回调
+### Key Changes
 
-#### 文件：`frontend/main_new.py`
+#### File: `frontend/services/async_api_client.py` (New)
+- Added `AsyncAPIClient` class
+- Supports asynchronous execution of any `APIClient` method
+- Provides success/failure callbacks
+
+#### File: `frontend/main_new.py`
 ```python
-# 导入
+# Import
 from services.async_api_client import AsyncAPIClient
 
-# load_initial_data() 改为异步调用三个 API
-# _on_data_loaded() 作为完成回调
+# `load_initial_data()` changed to asynchronously call three APIs
+# `_on_data_loaded()` as completion callback
 
-# on_vendors_updated() 也改为异步
+# `on_vendors_updated()` also changed to be asynchronous
 ```
 
-#### 文件：`frontend/controllers/product_tab.py`
+#### File: `frontend/controllers/product_tab.py`
 ```python
-# show_search_dialog() 中的 search() 嵌套函数
-# 原：APIClient.search_products(tag) 同步调用
-# 改：AsyncAPIClient.search_products_async(tag, on_success, on_error)
+# `search()` nested function in `show_search_dialog()`
+# Original: `APIClient.search_products(tag)` synchronous call
+# Revised: `AsyncAPIClient.search_products_async(tag, on_success, on_error)`
 ```
 
-#### 文件：`frontend/controllers/other_tabs.py`
+#### File: `frontend/controllers/other_tabs.py`
 ```python
-# _create_order() 方法
-# 原：APIClient.create_order(customer_id, self.order_items) 同步调用
-# 改：AsyncAPIClient.create_order_async(..., on_success, on_error)
+# `_create_order()` method
+# Original: `APIClient.create_order(customer_id, self.order_items)` synchronous call
+# Revised: `AsyncAPIClient.create_order_async(..., on_success, on_error)`
 
-# 同时修复问题1和问题2
-# - 改进产品选项格式
-# - items_table 被 pack()
-# - 双重检查订单项
+# Also fixed Problem 1 and Problem 2
+# - Improved product option format
+# - `items_table` is packed
+# - Double-check order items
 ```
 
 ---
 
-## 🔄 完整数据流示意图
+## 🔄 Complete Data Flow Diagram
 
-### 原来（同步 - 有问题）
+### Original (Synchronous - Problematic)
 ```
-点击按钮
+Click Button
   ↓
-UI 线程阻塞 ⏸
+UI Thread Blocked ⏸
   ↓
-APIClient.search/create() - 等待 1-2 秒
+APIClient.search/create() - waits 1-2 seconds
   ↓
-网络请求完成
+Network request completes
   ↓
-UI 线程解阻 ⏵
+UI Thread Unblocked ⏵
   ↓
-显示结果
+Display Result
 ```
-**问题**：3-6 秒内用户无法与 UI 交互
+**Problem**: User cannot interact with the UI for 3-6 seconds
 
-### 改后（异步 - 解决）
+### Revised (Asynchronous - Solved)
 ```
-点击按钮
+Click Button
   ↓
-启动后台线程
+Start Background Thread
   ↓
-UI 线程继续响应用户交互 ✅
+UI Thread continues to respond to user interaction ✅
   ↓
-后台线程：APIClient.search/create() - 等待 1-2 秒
+Background Thread: APIClient.search/create() - waits 1-2 seconds
   ↓
-后台线程完成，调用回调函数
+Background thread completes, calls callback function
   ↓
-主线程更新 UI（速度很快）
+Main thread updates UI (very fast)
   ↓
-显示结果
+Display Result
 ```
-**优势**：用户完全无感知，UI 始终响应
+**Advantage**: User is completely unaware, UI is always responsive
 
 ---
 
-## ✅ 验证清单
+## ✅ Verification Checklist
 
-- [x] 问题1：字符串解析修复
-  - [x] 产品选项格式改为 `"{name} (ID:{id})"`
-  - [x] 解析算法改为从右往左查找
+- [x] Problem 1: String parsing fix
+  - [x] Product option format changed to `"{name} (ID:{id})"`
+  - [x] Parsing algorithm changed to search from right to left
 
-- [x] 问题2：订单创建修复
-  - [x] items_table 被 pack()
-  - [x] _add_order_item 获得 items_table 引用
-  - [x] 订单项在表格中可见更新
-  - [x] 创建订单前进行双重检查
+- [x] Problem 2: Order creation fix
+  - [x] `items_table` is packed
+  - [x] `_add_order_item` gets `items_table` reference
+  - [x] Order items are visibly updated in the table
+  - [x] Double-check before creating an order
 
-- [x] 问题3：异步化修复
-  - [x] 创建 AsyncAPIClient 异步包装类
-  - [x] main_new.py 使用异步加载
-  - [x] product_tab.py 异步搜索
-  - [x] other_tabs.py 异步创建订单
-  - [x] 所有关键 API 调用都异步化
+- [x] Problem 3: Asynchronization fix
+  - [x] Created `AsyncAPIClient` asynchronous wrapper class
+  - [x] `main_new.py` uses asynchronous loading
+  - [x] `product_tab.py` asynchronous search
+  - [x] `other_tabs.py` asynchronous order creation
+  - [x] All critical API calls are asynchronized
 
-- [x] 代码质量
-  - [x] Python 类型检查通过
-  - [x] 所有新增代码都有文档注释
-  - [x] 错误处理完善
-
----
-
-## 🚀 测试步骤
-
-### 测试问题1修复：添加项按钮
-```
-1. 启动前端
-2. 点击 "订单" 标签页
-3. 点击 "新建订单"
-4. 选择客户和产品
-5. 输入数量
-6. 点击 "添加项" 按钮
-   ✅ 应该看到产品添加到 "订单项" 表格中
-   ✅ 不应该报 "invalid literal for int()" 错误
-```
-
-### 测试问题2修复：创建订单
-```
-1. 按照上述步骤添加 1-2 个商品
-2. 点击 "创建订单"
-   ✅ 应该显示 "订单创建成功！已添加 N 个商品"
-   ✅ 不应该报 "至少需要一个商品" 错误
-3. 验证订单列表已更新
-   ✅ 新创建的订单应该出现在订单表格中
-```
-
-### 测试问题3修复：UI 响应性
-```
-1. 启动前端，观察初始加载
-   ✅ 应该 <1 秒内显示所有数据
-   ✅ 不应该有明显的卡顿或 "未响应"
-
-2. 点击 "搜索" 按钮
-3. 输入标签，点击搜索
-   ✅ 应该立即返回，然后显示结果
-   ✅ 不应该卡住 1-2 秒
-
-4. 创建订单期间，尝试切换标签页
-   ✅ 切换应该立即响应
-   ✅ 订单创建在后台进行
-```
+- [x] Code Quality
+  - [x] Python type checks pass
+  - [x] All new code has docstrings
+  - [x] Error handling is complete
 
 ---
 
-## 📊 性能对比
+## 🚀 Test Steps
 
-### 初始加载时间
-| 场景 | 同步版本 | 异步版本 | 改进 |
-|-----|--------|--------|------|
-| 加载 3 个数据源 | 3-6 秒 | <1 秒 | 3-6 倍 |
-| UI 响应时间 | 0 秒 | 始终响应 | ✅ |
-| 用户体验 | 卡顿 | 流畅 | ✅ |
+### Test Problem 1 Fix: "Add Item" Button
+```
+1. Launch the frontend
+2. Click the "Orders" tab
+3. Click "New Order"
+4. Select a customer and a product
+5. Enter a quantity
+6. Click the "Add Item" button
+   ✅ Should see the product added to the "Order Items" table
+   ✅ Should not get an "invalid literal for int()" error
+```
 
-### 搜索和创建操作
-| 操作 | 同步版本 | 异步版本 | 改进 |
-|-----|--------|--------|------|
-| 响应延迟 | 1-2 秒 | 立即 | ✅ |
-| UI 阻塞 | 是 | 否 | ✅ |
+### Test Problem 2 Fix: Create Order
+```
+1. Follow the steps above to add 1-2 items
+2. Click "Create Order"
+   ✅ Should display "Order created successfully! Added N items"
+   ✅ Should not get an "At least one item required" error
+3. Verify the order list is updated
+   ✅ The newly created order should appear in the order table
+```
+
+### Test Problem 3 Fix: UI Responsiveness
+```
+1. Launch the frontend, observe initial loading
+   ✅ Should display all data in <1 second
+   ✅ Should not have noticeable freezes or "Not Responding"
+
+2. Click the "Search" button
+3. Enter a tag, click search
+   ✅ Should return immediately, then display results
+   ✅ Should not freeze for 1-2 seconds
+
+4. Try switching tabs while creating an order
+   ✅ Switching should be immediately responsive
+   ✅ Order creation happens in the background
+```
 
 ---
 
-## 💾 推荐的 Git 提交信息
+## 📊 Performance Comparison
+
+### Initial Load Time
+| Scenario | Synchronous Version | Asynchronous Version | Improvement |
+|---|---|---|---|
+| Loading 3 data sources | 3-6s | <1s | 3-6x |
+| UI Response Time | 0s | Always responsive | ✅ |
+| User Experience | Freezes | Smooth | ✅ |
+
+### Search and Create Operations
+| Operation | Synchronous Version | Asynchronous Version | Improvement |
+|---|---|---|---|
+| Response Latency | 1-2s | Immediate | ✅ |
+| UI Blocking | Yes | No | ✅ |
+
+---
+
+## 💾 Recommended Git Commit Message
 
 ```
-fix(frontend): 修复三大 GUI 问题
+fix(frontend): Resolve three major GUI issues
 
-修复问题1：添加订单项时字符串解析错误
-- 改进产品选项格式为 "{name} (ID:{id})"
-- 改进字符串分割算法使用 split("(ID:")[-1]
+Fix Problem 1: String parsing error when adding order items
+- Improved product option format to "{name} (ID:{id})"
+- Improved string splitting algorithm to use split("(ID:")[-1]
 
-修复问题2：创建订单时"至少需要一个商品"错误
-- 添加 items_table.pack() 使表格可见
-- 修复 _add_order_item() 获得正确的 items_table 引用
-- 添加订单项数量验证和双重检查
+Fix Problem 2: "At least one item required" error when creating an order
+- Added `items_table.pack()` to make the table visible
+- Fixed `_add_order_item()` to get the correct `items_table` reference
+- Added quantity validation and double-checking for order items
 
-修复问题3：GUI 经常无响应
-- 创建 AsyncAPIClient 异步 API 包装类
-- 异步化所有关键 API 调用
-- 使用后台线程避免阻塞 UI
+Fix Problem 3: GUI frequently unresponsive
+- Created `AsyncAPIClient` asynchronous API wrapper class
+- Asynchronized all critical API calls
+- Used background threads to avoid blocking the UI
 
 Refs: #3problems
 ```
-

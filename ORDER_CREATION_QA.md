@@ -1,155 +1,154 @@
-# 新建订单功能 - 问题解答
+# Create New Order Functionality - Q&A
 
-## 问题1：直接回答 - 是否先按添加项再按创建订单？
+## Question 1: Direct Answer - Should I add items before creating an order?
 
-**✅ 是的，流程完全正确！**
+**✅ Yes, that is the correct process!**
 
-### 正确的使用流程：
+### Correct Usage Flow:
 ```
-1. 点击 "订单" 标签页
-2. 点击 "新建订单" 按钮 → 对话框打开
-3. 选择客户
-4. 选择产品 + 输入数量
-5. 点击 "添加项" → 商品添加到订单项列表（可重复）
-6. 可以重复步骤4-5添加更多商品
-7. 点击 "创建订单" → 订单创建完成
+1. Click the "Orders" tab
+2. Click the "New Order" button → A dialog opens
+3. Select a customer
+4. Select a product + enter quantity
+5. Click "Add Item" → The product is added to the order items list (can be repeated)
+6. You can repeat steps 4-5 to add more products
+7. Click "Create Order" → The order is created
 ```
 
-### 关键点：
-- ✅ **先添加商品** ("添加项" 按钮) - 必须做这一步
-- ✅ **再创建订单** ("创建订单" 按钮) - 最后才做这一步
-- ❌ **不能跳过添加商品直接创建** - 会报错 "至少需要一个商品"
+### Key Points:
+- ✅ **Add products first** ("Add Item" button) - This step is mandatory
+- ✅ **Then create the order** ("Create Order" button) - This is the final step
+- ❌ **Do not skip adding products** - This will result in an "At least one product is required" error
 
 ---
 
-## 问题2：创建订单报错 "invalid literal for int() with base 10: ..."
+## Question 2: "invalid literal for int() with base 10: ..." error when creating an order
 
-### 根本原因
-客户选项和产品选项的格式不一致，导致字符串解析失败。
+### Root Cause
+The format of customer options and product options was inconsistent, leading to a string parsing failure.
 
-**修复前（问题）：**
+**Before Fix (Problem):**
 ```python
-客户选项：(ID:1) 张三        ❌ 格式：(ID:x) name
-产品选项：张三 (ID:1)        ✅ 格式：name (ID:x)
-          ↑
-          格式不一致！
+Customer Option: (ID:1) John Doe        ❌ Format: (ID:x) name
+Product Option:  Product A (ID:1)      ✅ Format: name (ID:x)
+                 ↑
+                 Inconsistent formats!
 ```
 
-**修复后（正常）：**
+**After Fix (Correct):**
 ```python
-客户选项：张三 (ID:1)        ✅ 格式：name (ID:x)
-产品选项：张三 (ID:1)        ✅ 格式：name (ID:x)
-          ↑
-          格式一致！
+Customer Option: John Doe (ID:1)        ✅ Format: name (ID:x)
+Product Option:  Product A (ID:1)      ✅ Format: name (ID:x)
+                 ↑
+                 Consistent formats!
 ```
 
-### 修复内容
+### Fix Details
 
-**文件**：`frontend/controllers/other_tabs.py`
+**File**: `frontend/controllers/other_tabs.py`
 
-**改动1**：第 142 行 - 统一客户选项格式
+**Change 1**: Line 142 - Standardize customer option format
 ```python
-# 原来（错误）
+# Before (Incorrect)
 customer_options = [f"(ID:{c['customer_id']}) {c['customer_name']}" for c in self.customers]
 
-# 改后（正确）
+# After (Correct)
 customer_options = [f"{c['customer_name']} (ID:{c['customer_id']})" for c in self.customers]
 ```
 
-**改动2**：第 213-242 行 - 改进错误处理
+**Change 2**: Lines 213-242 - Improved error handling
 ```python
 def _create_order(self, fields_frame, dialog):
-    # 检查是否有订单项
+    # Check if there are any order items
     if not self.order_items or len(self.order_items) == 0:
-        DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
+        DialogHelper.show_error("Error", "Please add at least one product to the order first")
         return
     
     values = fields_frame.get_values()
     try:
         customer_str = values['customer']
         
-        # 更安全的字符串解析
+        # Safer string parsing
         if '(ID:' not in customer_str:
-            raise ValueError(f"客户格式错误，应为 '{{name}} (ID:{{id}})' 格式")
+            raise ValueError(f"Incorrect customer format, should be '{{name}} (ID:{{id}})'")
         
         customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
         if not customer_id_str.isdigit():
-            raise ValueError(f"客户 ID 不是数字: {customer_id_str}")
+            raise ValueError(f"Customer ID is not a number: {customer_id_str}")
         
         customer_id = int(customer_id_str)
-        # ... 继续创建订单
+        # ... continue creating the order
 ```
 
-### 改进的错误处理
-- ✅ 检查格式是否包含 "(ID:"
-- ✅ 验证 ID 是否为纯数字
-- ✅ 提供详细的错误信息，方便调试
+### Improved Error Handling
+- ✅ Checks if the format contains "(ID:"
+- ✅ Verifies that the ID is a number
+- ✅ Provides detailed error messages for easier debugging
 
 ---
 
-## 验证清单
+## Verification Checklist
 
-测试修复是否成功：
+To test if the fix is successful:
 
 ```
-1. 启动前端应用
+1. Start the frontend application
    └─ python frontend/main_new.py
 
-2. 点击 "订单" 标签页
+2. Click the "Orders" tab
 
-3. 点击 "新建订单"
-   └─ 对话框打开
+3. Click "New Order"
+   └─ A dialog opens
 
-4. 选择客户
-   └─ 现在显示为：张三 (ID:1)
-   └─ 格式已修复 ✅
+4. Select a customer
+   └─ Now displays as: John Doe (ID:1)
+   └─ Format is fixed ✅
 
-5. 选择产品并输入数量
-   └─ 格式：张三 (ID:1)
+5. Select a product and enter a quantity
+   └─ Format: Product A (ID:1)
 
-6. 点击 "添加项"
-   └─ 商品添加到列表
-   └─ 不应该报 "invalid literal for int()" 错误 ✅
+6. Click "Add Item"
+   └─ The product is added to the list
+   └─ Should not report an "invalid literal for int()" error ✅
 
-7. 点击 "创建订单"
-   └─ 订单创建成功
-   └─ 看到 "订单创建成功！已添加 N 个商品" 提示 ✅
+7. Click "Create Order"
+   └─ The order is created successfully
+   └─ See "Order created successfully! N items added" prompt ✅
 
-8. 订单列表更新
-   └─ 新订单出现在订单表格中 ✅
+8. The order list updates
+   └─ The new order appears in the order table ✅
 ```
 
 ---
 
-## 问题排查
+## Troubleshooting
 
-### 如果仍然报错 "invalid literal for int()"
+### If you still get an "invalid literal for int()" error
 
-**可能原因**：
-1. 没有重启应用 → 需要重新启动 `python frontend/main_new.py`
-2. 客户选项格式仍然错误 → 检查代码是否真正修改了
+**Possible Causes**:
+1. The application was not restarted → You need to restart `python frontend/main_new.py`
+2. The customer option format is still incorrect → Check if the code was actually modified
 
-**排查步骤**：
+**Troubleshooting Steps**:
 ```python
-# 在对话框打开时，输出调试信息
+# When the dialog opens, print debug information
 values = fields_frame.get_values()
 customer_str = values['customer']
-print(f"DEBUG: 客户字符串 = {customer_str!r}")
-print(f"DEBUG: 应该是格式: name (ID:id)")
+print(f"DEBUG: Customer string = {customer_str!r}")
+print(f"DEBUG: Expected format: name (ID:id)")
 ```
 
-### 如果看不到新创建的订单
+### If you don't see the newly created order
 
-**原因**：订单列表需要刷新
-**解决**：点击订单标签页上的 "刷新" 按钮
+**Cause**: The order list needs to be refreshed
+**Solution**: Click the "Refresh" button on the order tab
 
 ---
 
-## 总结
+## Summary
 
-| 问题 | 状态 | 解决方案 |
-|-----|-----|---------|
-| 是否先添加项再创建订单 | ✅ 正确流程 | 是的，必须先添加商品再创建订单 |
-| 创建订单报错 "invalid literal" | ✅ 已修复 | 统一了客户和产品选项格式 |
-| 错误处理不清楚 | ✅ 已改进 | 添加了详细的格式验证和错误信息 |
-
+| Issue | Status | Solution |
+|---|---|---|
+| Should items be added before creating an order? | ✅ Correct Process | Yes, products must be added before creating the order |
+| "invalid literal" error on order creation | ✅ Fixed | Standardized customer and product option formats |
+| Unclear error handling | ✅ Improved | Added detailed format validation and error messages |

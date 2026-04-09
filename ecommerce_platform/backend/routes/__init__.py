@@ -1,5 +1,5 @@
 """
-API路由层 - 定义所有REST接口
+API Route Layer - Defines all REST interfaces
 """
 
 from fastapi import APIRouter, HTTPException
@@ -12,7 +12,7 @@ from models import (
 from services import VendorService, ProductService, CustomerService, OrderService, TransactionService
 from dao import DatabaseConfig
 
-# 创建数据库配置
+# Create database configuration
 db_config = DatabaseConfig(
     host='localhost',
     port=3306,
@@ -21,24 +21,24 @@ db_config = DatabaseConfig(
     database='ecommerce_platform'
 )
 
-# 初始化服务
+# Initialize services
 vendor_service = VendorService(db_config)
 product_service = ProductService(db_config)
 customer_service = CustomerService(db_config)
 order_service = OrderService(db_config)
 transaction_service = TransactionService(db_config)
 
-# 创建路由器
+# Create router
 router = APIRouter(prefix="/api", tags=["ecommerce"])
 
 
 # ============================================================================
-# VENDORS 端点
+# VENDORS Endpoints
 # ============================================================================
 
 @router.get("/vendors", response_model=List[VendorResponse])
 async def get_vendors():
-    """获取所有供应商"""
+    """Get all vendors"""
     try:
         return vendor_service.get_all_vendors()
     except Exception as e:
@@ -47,7 +47,7 @@ async def get_vendors():
 
 @router.post("/vendors", response_model=VendorResponse)
 async def create_vendor(vendor: VendorBase):
-    """创建新供应商"""
+    """Create a new vendor"""
     try:
         return vendor_service.create_vendor(vendor.business_name, vendor.geographical_presence)
     except ValueError as e:
@@ -58,7 +58,7 @@ async def create_vendor(vendor: VendorBase):
 
 @router.get("/vendors/{vendor_id}", response_model=VendorResponse)
 async def get_vendor(vendor_id: int):
-    """获取特定供应商"""
+    """Get a specific vendor"""
     try:
         return vendor_service.get_vendor_by_id(vendor_id)
     except ValueError as e:
@@ -68,12 +68,12 @@ async def get_vendor(vendor_id: int):
 
 
 # ============================================================================
-# PRODUCTS 端点
+# PRODUCTS Endpoints
 # ============================================================================
 
 @router.get("/products", response_model=List[ProductResponse])
 async def get_products(vendor_id: Optional[int] = None):
-    """获取所有产品或按供应商筛选"""
+    """Get all products or filter by vendor"""
     try:
         if vendor_id:
             return product_service.get_products_by_vendor(vendor_id)
@@ -86,7 +86,7 @@ async def get_products(vendor_id: Optional[int] = None):
 
 @router.post("/products", response_model=ProductResponse)
 async def create_product(vendor_id: int, product: ProductBase):
-    """创建新产品"""
+    """Create a new product"""
     try:
         return product_service.create_product(
             vendor_id, product.product_name, product.listed_price,
@@ -100,7 +100,7 @@ async def create_product(vendor_id: int, product: ProductBase):
 
 @router.get("/products/search")
 async def search_products(tag: str):
-    """根据标签搜索产品"""
+    """Search for products by tag"""
     try:
         return product_service.search_products_by_tag(tag)
     except ValueError as e:
@@ -110,12 +110,12 @@ async def search_products(tag: str):
 
 
 # ============================================================================
-# CUSTOMERS 端点
+# CUSTOMERS Endpoints
 # ============================================================================
 
 @router.get("/customers", response_model=List[CustomerResponse])
 async def get_customers():
-    """获取所有客户"""
+    """Get all customers"""
     try:
         return customer_service.get_all_customers()
     except Exception as e:
@@ -124,7 +124,7 @@ async def get_customers():
 
 @router.post("/customers", response_model=CustomerResponse)
 async def create_customer(customer: CustomerBase):
-    """创建新客户"""
+    """Create a new customer"""
     try:
         return customer_service.create_customer(
             customer.customer_name, customer.contact_number, customer.shipping_address
@@ -137,7 +137,7 @@ async def create_customer(customer: CustomerBase):
 
 @router.get("/customers/{customer_id}", response_model=CustomerResponse)
 async def get_customer(customer_id: int):
-    """获取特定客户"""
+    """Get a specific customer"""
     try:
         return customer_service.get_customer_by_id(customer_id)
     except ValueError as e:
@@ -147,12 +147,12 @@ async def get_customer(customer_id: int):
 
 
 # ============================================================================
-# ORDERS 端点
+# ORDERS Endpoints
 # ============================================================================
 
 @router.get("/orders")
 async def get_orders(customer_id: Optional[int] = None):
-    """获取所有订单或按客户筛选"""
+    """Get all orders or filter by customer"""
     try:
         if customer_id:
             return order_service.get_orders_by_customer(customer_id)
@@ -165,7 +165,7 @@ async def get_orders(customer_id: Optional[int] = None):
 
 @router.post("/orders")
 async def create_order(order: OrderBase):
-    """创建新订单"""
+    """Create a new order"""
     try:
         items = [
             {'product_id': item.product_id, 'quantity': item.quantity}
@@ -180,7 +180,7 @@ async def create_order(order: OrderBase):
 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: int):
-    """获取特定订单"""
+    """Get a specific order"""
     try:
         return order_service.get_order_by_id(order_id)
     except ValueError as e:
@@ -191,10 +191,10 @@ async def get_order(order_id: int):
 
 @router.put("/orders/{order_id}")
 async def update_order_status(order_id: int, status: str):
-    """更新订单状态"""
+    """Update order status"""
     try:
         order_service.update_order_status(order_id, status)
-        return {"message": "订单状态已更新"}
+        return {"message": "Order status updated"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -203,10 +203,10 @@ async def update_order_status(order_id: int, status: str):
 
 @router.delete("/orders/{order_id}")
 async def cancel_order(order_id: int):
-    """取消订单"""
+    """Cancel an order"""
     try:
         order_service.cancel_order(order_id)
-        return {"message": "订单已取消"}
+        return {"message": "Order canceled"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -215,10 +215,10 @@ async def cancel_order(order_id: int):
 
 @router.delete("/orders/{order_id}/items/{product_id}")
 async def remove_order_item(order_id: int, product_id: int):
-    """从订单中删除商品"""
+    """Remove an item from an order"""
     try:
         order_service.remove_order_item(order_id, product_id)
-        return {"message": "商品已删除"}
+        return {"message": "Item removed from order"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -226,12 +226,12 @@ async def remove_order_item(order_id: int, product_id: int):
 
 
 # ============================================================================
-# TRANSACTIONS 端点
+# TRANSACTIONS Endpoints
 # ============================================================================
 
 @router.get("/transactions", response_model=List[TransactionResponse])
 async def get_transactions(vendor_id: Optional[int] = None):
-    """获取所有交易或按供应商筛选"""
+    """Get all transactions or filter by vendor"""
     try:
         if vendor_id:
             return transaction_service.get_transactions_by_vendor(vendor_id)
@@ -248,5 +248,5 @@ async def get_transactions(vendor_id: Optional[int] = None):
 
 @router.get("/health")
 async def health_check():
-    """健康检查端点"""
+    """Health check endpoint"""
     return {"status": "healthy", "message": "E-Commerce Platform API is running"}

@@ -1,5 +1,5 @@
 """
-订单 (Order) 数据模型
+Order Data Model
 """
 
 from pydantic import BaseModel, Field
@@ -8,13 +8,13 @@ from datetime import datetime
 
 
 class OrderItemBase(BaseModel):
-    """订单项基础模型"""
+    """Base model for order items"""
     product_id: int
-    quantity: int = Field(gt=0, description="数量必须>0")
+    quantity: int = Field(gt=0, description="Quantity must be > 0")
 
 
 class OrderItemResponse(OrderItemBase):
-    """订单项响应模型"""
+    """Order item response model"""
     order_item_id: int
     unit_price: float
     subtotal: float
@@ -24,13 +24,13 @@ class OrderItemResponse(OrderItemBase):
 
 
 class OrderBase(BaseModel):
-    """订单基础模型 - 用于创建请求"""
+    """Base model for an order - used for creation requests"""
     customer_id: int
-    items: List[OrderItemBase] = Field(min_items=1, description="至少需要一个商品")
+    items: List[OrderItemBase] = Field(min_items=1, description="At least one item is required")
 
 
 class OrderResponse(BaseModel):
-    """订单响应模型 - 用于API返回"""
+    """Order response model - used for API returns"""
     order_id: int
     customer_id: int
     total_price: float

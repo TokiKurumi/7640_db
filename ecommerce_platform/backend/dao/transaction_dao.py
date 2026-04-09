@@ -1,5 +1,5 @@
 """
-交易数据访问对象 (TransactionDAO)
+Transaction Data Access Object (TransactionDAO)
 """
 
 from . import BaseDAO, DatabaseConfig
@@ -7,10 +7,10 @@ from typing import List, Dict, Any, Optional, Tuple
 
 
 class TransactionDAO(BaseDAO):
-    """交易数据访问类"""
+    """Transaction data access class"""
 
     def get_all_transactions(self) -> List[Dict[str, Any]]:
-        """获取所有交易"""
+        """Get all transactions"""
         query = """
             SELECT transaction_id, order_id, vendor_id, customer_id, product_id, 
                    quantity, transaction_amount, transaction_date, status 
@@ -20,7 +20,7 @@ class TransactionDAO(BaseDAO):
         return self.execute_query(query)
 
     def get_transactions_by_vendor(self, vendor_id: int) -> List[Dict[str, Any]]:
-        """根据供应商ID获取交易"""
+        """Get transactions by vendor ID"""
         query = """
             SELECT transaction_id, order_id, vendor_id, customer_id, product_id, 
                    quantity, transaction_amount, transaction_date, status 
@@ -31,7 +31,7 @@ class TransactionDAO(BaseDAO):
         return self.execute_query(query, (vendor_id,))
 
     def get_transactions_by_order(self, order_id: int) -> List[Dict[str, Any]]:
-        """根据订单ID获取交易"""
+        """Get transactions by order ID"""
         query = """
             SELECT transaction_id, order_id, vendor_id, customer_id, product_id, 
                    quantity, transaction_amount, transaction_date, status 
@@ -43,7 +43,7 @@ class TransactionDAO(BaseDAO):
     def create_transaction(self, order_id: int, vendor_id: int, customer_id: int,
                           product_id: int, quantity: int, transaction_amount: float,
                           status: str = 'completed') -> Tuple[int, int]:
-        """创建新交易"""
+        """Create a new transaction"""
         query = """
             INSERT INTO transactions (order_id, vendor_id, customer_id, product_id, quantity, 
                                      transaction_amount, status)
@@ -53,7 +53,7 @@ class TransactionDAO(BaseDAO):
                                            quantity, transaction_amount, status))
 
     def update_transaction_status(self, transaction_id: int, status: str) -> int:
-        """更新交易状态"""
+        """Update transaction status"""
         query = "UPDATE transactions SET status = %s WHERE transaction_id = %s"
         affected_rows, _ = self.execute_update(query, (status, transaction_id))
         return affected_rows

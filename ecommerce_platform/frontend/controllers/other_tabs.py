@@ -1,5 +1,5 @@
 """
-客户、订单和交易标签页控制器
+Customer, Order, and Transaction Tab Controllers
 """
 
 import tkinter as tk
@@ -12,31 +12,31 @@ from services.async_api_client import AsyncAPIClient
 
 
 class CustomerTabController(TabController):
-    """客户标签页"""
+    """Customer Tab"""
     
     def __init__(self, notebook: ttk.Notebook):
-        super().__init__(notebook, "客户")
+        super().__init__(notebook, "Customers")
     
     def setup_ui(self):
-        """设置 UI"""
-        # 操作按钮
+        """Set up the UI"""
+        # Action buttons
         button_frame = ttk.Frame(self.frame)
         button_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Button(button_frame, text="新建客户", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="刷新", command=self.refresh_customers).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="New Customer", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh", command=self.refresh_customers).pack(side=tk.LEFT, padx=5)
         
-        # 客户表格（分页）
+        # Customer table (paginated)
         self.customer_table = PaginatedDataTable(
             self.frame,
-            columns=["ID", "名称", "电话", "地址"],
+            columns=["ID", "Name", "Phone", "Address"],
             page_size=10,
-            title="客户列表"
+            title="Customer List"
         )
         self.customer_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_customers(self):
-        """刷新客户列表"""
+        """Refresh customer list"""
         try:
             self.customer_table.clear_all()
             customers = APIClient.get_customers()
@@ -49,22 +49,22 @@ class CustomerTabController(TabController):
                     customer['shipping_address']
                 ])
         except Exception as e:
-            DialogHelper.show_error("错误", f"加载客户失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to load customers: {str(e)}")
 
     def show_create_dialog(self):
-        """显示创建客户对话框"""
+        """Show create customer dialog"""
         dialog = tk.Toplevel(self.frame)
-        dialog.title("新建客户")
+        dialog.title("New Customer")
         dialog.geometry("400x200")
         
         fields_frame = InputFrame(dialog, [
-            {'label': '客户名称', 'key': 'name', 'type': 'text'},
-            {'label': '电话号码', 'key': 'phone', 'type': 'text'},
-            {'label': '收货地址', 'key': 'address', 'type': 'textarea'},
+            {'label': 'Customer Name', 'key': 'name', 'type': 'text'},
+            {'label': 'Phone Number', 'key': 'phone', 'type': 'text'},
+            {'label': 'Shipping Address', 'key': 'address', 'type': 'textarea'},
         ], padding=10)
         fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # 按钮
+        # Buttons
         button_frame = ttk.Frame(dialog)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
         
@@ -72,49 +72,49 @@ class CustomerTabController(TabController):
             values = fields_frame.get_values()
             try:
                 APIClient.create_customer(values['name'], values['phone'], values['address'])
-                DialogHelper.show_success("成功", "客户创建成功")
+                DialogHelper.show_success("Success", "Customer created successfully")
                 dialog.destroy()
                 self.refresh_customers()
             except Exception as e:
-                DialogHelper.show_error("错误", str(e))
+                DialogHelper.show_error("Error", str(e))
         
-        ttk.Button(button_frame, text="创建", command=create).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Create", command=create).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 class OrderTabController(TabController):
-    """订单标签页"""
+    """Order Tab"""
     
     def __init__(self, notebook: ttk.Notebook, customers: Optional[List[Dict[str, Any]]] = None, products: Optional[List[Dict[str, Any]]] = None):
         self.customers = customers if customers is not None else []
         self.products = products if products is not None else []
         self.order_items = []
-        super().__init__(notebook, "订单")
+        super().__init__(notebook, "Orders")
 
     def setup_ui(self):
-        """设置 UI"""
-        # 操作按钮
+        """Set up the UI"""
+        # Action buttons
         button_frame = ttk.Frame(self.frame)
         button_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Button(button_frame, text="新建订单", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="刷新", command=self.refresh_orders).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="取消订单", command=self.cancel_selected_order).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="New Order", command=self.show_create_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh", command=self.refresh_orders).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel Order", command=self.cancel_selected_order).pack(side=tk.LEFT, padx=5)
         
-        # 订单表格（分页）
+        # Order table (paginated)
         self.order_table = PaginatedDataTable(
             self.frame,
-            columns=["ID", "客户", "日期", "总额", "状态"],
+            columns=["ID", "Customer", "Date", "Total", "Status"],
             page_size=10,
-            title="订单列表"
+            title="Order List"
         )
         self.order_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # 将表格的选择事件与详情显示关联
+        # Bind table selection event to show details
         self.order_table.tree.bind("<Double-1>", lambda e: self.show_order_details())
 
     def refresh_orders(self):
-        """刷新订单列表"""
+        """Refresh order list"""
         try:
             self.order_table.clear_all()
             orders = APIClient.get_orders()
@@ -130,193 +130,193 @@ class OrderTabController(TabController):
                     order['status']
                 ])
         except Exception as e:
-            DialogHelper.show_error("错误", f"加载订单失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to load orders: {str(e)}")
 
     def show_create_dialog(self):
-        """显示创建订单对话框"""
+        """Show create order dialog"""
         dialog = tk.Toplevel(self.frame)
-        dialog.title("新建订单")
+        dialog.title("New Order")
         dialog.geometry("800x600")
         
-        # 说明文本
-        ttk.Label(dialog, text="请逐行添加商品，每行可以选择不同的客户（但同一订单的所有商品必须属于同一客户）", 
+        # Explanatory text
+        ttk.Label(dialog, text="Please add items line by line. You can select different customers for each line (but all items in the same order must belong to the same customer)", 
                  wraplength=700).pack(padx=10, pady=5)
         
-        # 输入框 - 产品选择
+        # Input fields - Product selection
         product_options = [f"{p['product_name']} (ID:{p['product_id']})" for p in self.products]
         
         fields_frame = InputFrame(dialog, [
-            {'label': '产品', 'key': 'product', 'type': 'select', 'values': product_options},
-            {'label': '数量', 'key': 'quantity', 'type': 'text'},
+            {'label': 'Product', 'key': 'product', 'type': 'select', 'values': product_options},
+            {'label': 'Quantity', 'key': 'quantity', 'type': 'text'},
         ], padding=10)
         fields_frame.pack(fill=tk.X, padx=10, pady=10)
         
-        # 按钮框架
+        # Button frame
         action_frame = ttk.Frame(dialog)
         action_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        # 订单项列表
+        # Order items list
         self.order_items = []
         items_table = DataTable(
             dialog,
-            columns=["产品名称", "产品ID", "数量"],
-            title="订单项"
+            columns=["Product Name", "Product ID", "Quantity"],
+            title="Order Items"
         )
-        # 重要：必须 pack 才能显示
+        # Important: must be packed to be visible
         items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # 底部：客户选择（统一为整个订单选择）
+        # Bottom: Customer selection (unified for the entire order)
         bottom_frame = ttk.Frame(dialog)
         bottom_frame.pack(fill=tk.X, padx=10, pady=10)
         
-        ttk.Label(bottom_frame, text="选择客户:", font=("Arial", 12, "bold")).pack(side=tk.LEFT, padx=5)
+        ttk.Label(bottom_frame, text="Select Customer:", font=("Arial", 12, "bold")).pack(side=tk.LEFT, padx=5)
         customer_options = [f"{c['customer_name']} (ID:{c['customer_id']})" for c in self.customers]
         customer_combo = ttk.Combobox(bottom_frame, values=customer_options, width=50, state='readonly', font=("Arial", 11))
         customer_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         
-        ttk.Button(action_frame, text="添加项", command=lambda: self._add_order_item(fields_frame, items_table)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="创建订单", command=lambda: self._create_order_with_customer(fields_frame, items_table, dialog, customer_combo)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Add Item", command=lambda: self._add_order_item(fields_frame, items_table)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Create Order", command=lambda: self._create_order_with_customer(fields_frame, items_table, dialog, customer_combo)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _add_order_item(self, fields_frame, items_table):
-        """添加订单项"""
+        """Add order item"""
         values = fields_frame.get_values()
         try:
-            # 检查产品是否选择
+            # Check if a product is selected
             product_str = values['product'].strip()
             if not product_str:
-                raise ValueError("产品未选择，请从下拉菜单中选择一个产品")
+                raise ValueError("Product not selected, please select a product from the dropdown menu")
             
-            # 格式："产品名称 (ID:123)" -> 提取 123
+            # Format: "Product Name (ID:123)" -> extract 123
             product_id_str = product_str.split("(ID:")[-1].rstrip(")")
             if not product_id_str.isdigit():
-                raise ValueError(f"产品 ID 不是数字: {product_id_str}")
+                raise ValueError(f"Product ID is not a number: {product_id_str}")
             product_id = int(product_id_str)
             
-            # 检查数量
+            # Check quantity
             quantity_str = values['quantity'].strip()
             if not quantity_str:
-                raise ValueError("数量未输入")
+                raise ValueError("Quantity not entered")
             quantity = int(quantity_str)
             
             if quantity <= 0:
-                DialogHelper.show_error("错误", "数量必须大于0")
+                DialogHelper.show_error("Error", "Quantity must be greater than 0")
                 return
             
-            # 获取产品信息
-            product_name = next((p['product_name'] for p in self.products if p['product_id'] == product_id), "未知")
+            # Get product information
+            product_name = next((p['product_name'] for p in self.products if p['product_id'] == product_id), "Unknown")
             
-            # 添加到订单项列表
+            # Add to order item list
             self.order_items.append({
                 'product_id': product_id,
                 'quantity': quantity
             })
             
-            # 在表格中显示
+            # Display in table
             items_table.add_row([
                 product_name,
                 product_id,
                 quantity
             ])
             
-            DialogHelper.show_success("成功", f"已添加 {product_name} x{quantity}")
+            DialogHelper.show_success("Success", f"Added {product_name} x{quantity}")
             fields_frame.clear_values()
         except ValueError as e:
-            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+            DialogHelper.show_error("Error", f"Input format error: {str(e)}")
         except Exception as e:
-            DialogHelper.show_error("错误", f"添加失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to add: {str(e)}")
 
     def _create_order_with_customer(self, fields_frame, items_table, dialog, customer_combo):
-        """创建订单（从对话框底部的客户选择）"""
-        # 检查是否有订单项
+        """Create order (from customer selection at the bottom of the dialog)"""
+        # Check if there are order items
         if not self.order_items or len(self.order_items) == 0:
-            DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
+            DialogHelper.show_error("Error", "Please add at least one item to the order first")
             return
         
         try:
             customer_str = customer_combo.get().strip()
             
-            # 检查是否选择了客户
+            # Check if a customer is selected
             if not customer_str:
-                raise ValueError("客户未选择，请从下拉菜单中选择一个客户")
+                raise ValueError("Customer not selected, please select a customer from the dropdown menu")
             
-            # 改进：更安全的字符串解析，带有详细的错误信息
+            # Improvement: Safer string parsing with detailed error messages
             if '(ID:' not in customer_str:
-                raise ValueError(f"客户格式错误，应为 '{{name}} (ID:{{id}})' 格式，实际收到: {customer_str}")
+                raise ValueError(f"Customer format error, should be '{{name}} (ID:{{id}})', but got: {customer_str}")
             
             customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
             if not customer_id_str.isdigit():
-                raise ValueError(f"客户 ID 不是数字: {customer_id_str}")
+                raise ValueError(f"Customer ID is not a number: {customer_id_str}")
             
             customer_id = int(customer_id_str)
             
-            # 创建订单前清空临时变量
+            # Clear temporary variables before creating the order
             items_to_create = self.order_items.copy()
             
             def on_success(result):
-                DialogHelper.show_success("成功", f"订单创建成功！已添加 {len(items_to_create)} 个商品")
-                # 清空订单项并关闭对话框
+                DialogHelper.show_success("Success", f"Order created successfully! Added {len(items_to_create)} items")
+                # Clear order items and close the dialog
                 self.order_items = []
                 dialog.destroy()
                 self.refresh_orders()
             
             def on_error(error):
-                DialogHelper.show_error("错误", f"创建订单失败: {str(error)}")
+                DialogHelper.show_error("Error", f"Failed to create order: {str(error)}")
             
-            # 异步创建订单，避免阻塞 UI
+            # Create order asynchronously to avoid blocking the UI
             AsyncAPIClient.create_order_async(customer_id, items_to_create, on_success, on_error)
         except ValueError as e:
-            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+            DialogHelper.show_error("Error", f"Input format error: {str(e)}")
         except Exception as e:
-            DialogHelper.show_error("错误", f"创建订单失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to create order: {str(e)}")
     
     def _create_order(self, fields_frame, dialog):
-        """创建订单（异步）- 保留旧方法以支持向后兼容"""
-        # 检查是否有订单项
+        """Create order (async) - old method retained for backward compatibility"""
+        # Check if there are order items
         if not self.order_items or len(self.order_items) == 0:
-            DialogHelper.show_error("错误", "请先添加至少一个商品到订单项")
+            DialogHelper.show_error("Error", "Please add at least one item to the order first")
             return
         
         values = fields_frame.get_values()
         try:
             customer_str = values['customer'].strip()
             
-            # 检查是否选择了客户
+            # Check if a customer is selected
             if not customer_str:
-                raise ValueError("客户未选择，请从下拉菜单中选择一个客户")
+                raise ValueError("Customer not selected, please select a customer from the dropdown menu")
             
-            # 改进：更安全的字符串解析，带有详细的错误信息
+            # Improvement: Safer string parsing with detailed error messages
             if '(ID:' not in customer_str:
-                raise ValueError(f"客户格式错误，应为 '{{name}} (ID:{{id}})' 格式，实际收到: {customer_str}")
+                raise ValueError(f"Customer format error, should be '{{name}} (ID:{{id}})', but got: {customer_str}")
             
             customer_id_str = customer_str.split("(ID:")[-1].rstrip(")")
             if not customer_id_str.isdigit():
-                raise ValueError(f"客户 ID 不是数字: {customer_id_str}")
+                raise ValueError(f"Customer ID is not a number: {customer_id_str}")
             
             customer_id = int(customer_id_str)
             
-            # 创建订单前清空临时变量
+            # Clear temporary variables before creating the order
             items_to_create = self.order_items.copy()
             
             def on_success(result):
-                DialogHelper.show_success("成功", f"订单创建成功！已添加 {len(items_to_create)} 个商品")
-                # 清空订单项并关闭对话框
+                DialogHelper.show_success("Success", f"Order created successfully! Added {len(items_to_create)} items")
+                # Clear order items and close the dialog
                 self.order_items = []
                 dialog.destroy()
                 self.refresh_orders()
             
             def on_error(error):
-                DialogHelper.show_error("错误", f"创建订单失败: {str(error)}")
+                DialogHelper.show_error("Error", f"Failed to create order: {str(error)}")
             
-            # 异步创建订单，避免阻塞 UI
+            # Create order asynchronously to avoid blocking the UI
             AsyncAPIClient.create_order_async(customer_id, items_to_create, on_success, on_error)
         except ValueError as e:
-            DialogHelper.show_error("错误", f"输入格式错误: {str(e)}")
+            DialogHelper.show_error("Error", f"Input format error: {str(e)}")
         except Exception as e:
-            DialogHelper.show_error("错误", f"创建订单失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to create order: {str(e)}")
 
     def show_order_details(self):
-        """显示订单详情"""
+        """Show order details"""
         row = self.order_table.get_selected()
         if not row:
             return
@@ -325,36 +325,36 @@ class OrderTabController(TabController):
         try:
             order = APIClient.get_order_details(order_id)
             
-            # 创建详情窗口
+            # Create details window
             details_dialog = tk.Toplevel(self.frame)
-            details_dialog.title(f"订单 {order_id} 详情")
+            details_dialog.title(f"Order {order_id} Details")
             details_dialog.geometry("600x400")
             
-            # 订单信息
+            # Order information
             info_text = f"""
-订单ID: {order['order_id']}
-客户ID: {order['customer_id']}
-总额: ¥{order['total_price']:.2f}
-状态: {order['status']}
-日期: {order['order_date']}
+Order ID: {order['order_id']}
+Customer ID: {order['customer_id']}
+Total: ¥{order['total_price']:.2f}
+Status: {order['status']}
+Date: {order['order_date']}
             """
             
             ttk.Label(details_dialog, text=info_text, justify=tk.LEFT).pack(padx=10, pady=10)
             
-            # 订单项
+            # Order Items
             items_table = DataTable(
                 details_dialog,
-                columns=["产品名称", "产品ID", "数量", "单价", "小计"],
-                title="订单项"
+                columns=["Product Name", "Product ID", "Quantity", "Unit Price", "Subtotal"],
+                title="Order Items"
             )
-            # 重要：必须 pack 才能显示
+            # Important: must be packed to be visible
             items_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
             
-            # 构建产品ID到名称的映射
+            # Build a map from product ID to name
             products_map = {p['product_id']: p['product_name'] for p in self.products}
             
             for item in order['items']:
-                product_name = products_map.get(item['product_id'], "未知产品")
+                product_name = products_map.get(item['product_id'], "Unknown Product")
                 items_table.add_row([
                     product_name,
                     item['product_id'],
@@ -363,7 +363,7 @@ class OrderTabController(TabController):
                     f"¥{item['subtotal']:.2f}"
                 ])
             
-            # 操作按钮
+            # Action buttons
             if order['status'] == 'pending':
                 button_frame = ttk.Frame(details_dialog)
                 button_frame.pack(fill=tk.X, padx=10, pady=10)
@@ -374,73 +374,73 @@ class OrderTabController(TabController):
                         product_id = selected[0]
                         try:
                             APIClient.remove_order_item(order_id, product_id)
-                            DialogHelper.show_success("成功", "商品已删除")
+                            DialogHelper.show_success("Success", "Item removed")
                             details_dialog.destroy()
                             self.refresh_orders()
                         except Exception as e:
-                            DialogHelper.show_error("错误", str(e))
+                            DialogHelper.show_error("Error", str(e))
                 
-                ttk.Button(button_frame, text="删除选中商品", command=remove_item).pack(side=tk.LEFT, padx=5)
+                ttk.Button(button_frame, text="Remove Selected Item", command=remove_item).pack(side=tk.LEFT, padx=5)
         
         except Exception as e:
-            DialogHelper.show_error("错误", f"加载订单详情失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to load order details: {str(e)}")
 
     def cancel_selected_order(self):
-        """取消选中的订单"""
+        """Cancel selected order"""
         row = self.order_table.get_selected()
         if not row:
-            DialogHelper.show_error("提示", "请选择一个订单")
+            DialogHelper.show_error("Info", "Please select an order")
             return
         
         order_id = row[0]
-        if DialogHelper.confirm("确认", f"确定取消订单 {order_id} 吗?"):
+        if DialogHelper.confirm("Confirm", f"Are you sure you want to cancel order {order_id}?"):
             try:
                 APIClient.cancel_order(order_id)
-                DialogHelper.show_success("成功", "订单已取消")
+                DialogHelper.show_success("Success", "Order has been cancelled")
                 
-                # 异步刷新（避免网络延迟导致数据未更新）
+                # Asynchronous refresh (to avoid data not being updated due to network latency)
                 def on_success(result):
-                    # 重新加载订单列表
+                    # Reload order list
                     self.refresh_orders()
                 
                 def on_error(error):
-                    DialogHelper.show_error("错误", f"刷新订单列表失败: {str(error)}")
-                    # 强制刷新
+                    DialogHelper.show_error("Error", f"Failed to refresh order list: {str(error)}")
+                    # Force refresh
                     self.refresh_orders()
                 
-                # 使用异步获取最新的订单列表
+                # Use async to get the latest order list
                 AsyncAPIClient.get_orders_async(on_success, on_error)
             except Exception as e:
-                DialogHelper.show_error("错误", str(e))
+                DialogHelper.show_error("Error", str(e))
 
 
 class TransactionTabController(TabController):
-    """交易标签页"""
+    """Transaction Tab"""
     
     def __init__(self, notebook: ttk.Notebook, vendors: Optional[List[Dict[str, Any]]] = None):
         self.vendors = vendors if vendors is not None else []
-        super().__init__(notebook, "交易")
+        super().__init__(notebook, "Transactions")
 
     def setup_ui(self):
-        """设置 UI"""
-        # 操作按钮
+        """Set up the UI"""
+        # Action buttons
         button_frame = ttk.Frame(self.frame)
         button_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Button(button_frame, text="刷新", command=self.refresh_transactions).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="按供应商筛选", command=self.show_filter_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh", command=self.refresh_transactions).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Filter by Vendor", command=self.show_filter_dialog).pack(side=tk.LEFT, padx=5)
         
-        # 交易表格（分页）
+        # Transaction table (paginated)
         self.transaction_table = PaginatedDataTable(
             self.frame,
-            columns=["ID", "订单ID", "供应商", "客户", "产品", "数量", "金额", "日期"],
+            columns=["ID", "Order ID", "Vendor", "Customer", "Product", "Quantity", "Amount", "Date"],
             page_size=10,
-            title="交易历史"
+            title="Transaction History"
         )
         self.transaction_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def refresh_transactions(self):
-        """刷新交易列表"""
+        """Refresh transaction list"""
         try:
             self.transaction_table.clear_all()
             transactions = APIClient.get_transactions()
@@ -457,32 +457,32 @@ class TransactionTabController(TabController):
                     str(tx['transaction_date'])[:10]
                 ])
         except Exception as e:
-            DialogHelper.show_error("错误", f"加载交易失败: {str(e)}")
+            DialogHelper.show_error("Error", f"Failed to load transactions: {str(e)}")
 
     def show_filter_dialog(self):
-        """显示筛选对话框"""
+        """Show filter dialog"""
         dialog = tk.Toplevel(self.frame)
-        dialog.title("筛选交易")
+        dialog.title("Filter Transactions")
         dialog.geometry("300x100")
         
-        # 统一格式：{name} (ID:{id})
+        # Unified format: {name} (ID:{id})
         vendor_options = [f"{v['business_name']} (ID:{v['vendor_id']})" for v in self.vendors]
         
-        ttk.Label(dialog, text="选择供应商:").pack(padx=10, pady=5)
+        ttk.Label(dialog, text="Select Vendor:").pack(padx=10, pady=5)
         vendor_combo = ttk.Combobox(dialog, values=vendor_options, width=28)
         vendor_combo.pack(padx=10, pady=5)
         
         def filter_by_vendor():
             vendor_str = vendor_combo.get()
             if not vendor_str:
-                DialogHelper.show_error("错误", "请选择供应商")
+                DialogHelper.show_error("Error", "Please select a vendor")
                 return
             
             try:
-                # 统一解析算法
+                # Unified parsing algorithm
                 vendor_id_str = vendor_str.split("(ID:")[-1].rstrip(")")
                 if not vendor_id_str.isdigit():
-                    raise ValueError(f"供应商 ID 不是数字: {vendor_id_str}")
+                    raise ValueError(f"Vendor ID is not a number: {vendor_id_str}")
                 vendor_id = int(vendor_id_str)
                 
                 self.transaction_table.clear_all()
@@ -502,8 +502,8 @@ class TransactionTabController(TabController):
                 
                 dialog.destroy()
             except ValueError as e:
-                DialogHelper.show_error("错误", f"筛选失败: {str(e)}")
+                DialogHelper.show_error("Error", f"Filter failed: {str(e)}")
             except Exception as e:
-                DialogHelper.show_error("错误", f"筛选失败: {str(e)}")
+                DialogHelper.show_error("Error", f"Filter failed: {str(e)}")
         
-        ttk.Button(dialog, text="筛选", command=filter_by_vendor).pack(pady=5)
+        ttk.Button(dialog, text="Filter", command=filter_by_vendor).pack(pady=5)

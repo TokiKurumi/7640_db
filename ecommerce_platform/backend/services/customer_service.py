@@ -1,5 +1,5 @@
 """
-客户服务层 (CustomerService)
+Customer Service Layer (CustomerService)
 """
 
 from dao.customer_dao import CustomerDAO
@@ -8,50 +8,50 @@ from typing import List, Dict, Any, Optional
 
 
 class CustomerService:
-    """客户业务逻辑类"""
+    """Customer business logic class"""
 
     def __init__(self, config: DatabaseConfig):
         self.customer_dao = CustomerDAO(config)
 
     def get_all_customers(self) -> List[Dict[str, Any]]:
-        """获取所有客户"""
+        """Get all customers"""
         try:
             return self.customer_dao.get_all_customers()
         except Exception as e:
-            raise Exception(f"获取客户列表失败: {str(e)}")
+            raise Exception(f"Failed to get customer list: {str(e)}")
 
     def get_customer_by_id(self, customer_id: int) -> Optional[Dict[str, Any]]:
-        """根据ID获取客户"""
+        """Get customer by ID"""
         if not customer_id or customer_id <= 0:
-            raise ValueError("客户ID无效")
+            raise ValueError("Invalid customer ID")
 
         customer = self.customer_dao.get_customer_by_id(customer_id)
         if not customer:
-            raise ValueError(f"客户ID {customer_id} 不存在")
+            raise ValueError(f"Customer with ID {customer_id} does not exist")
         return customer
 
     def create_customer(self, customer_name: str, contact_number: str,
                        shipping_address: str) -> Dict[str, Any]:
         """
-        创建新客户
-        :param customer_name: 客户名称
-        :param contact_number: 联系电话 (唯一)
-        :param shipping_address: 收货地址
-        :return: 新创建的客户信息
+        Create a new customer
+        :param customer_name: Customer name
+        :param contact_number: Contact number (unique)
+        :param shipping_address: Shipping address
+        :return: Newly created customer information
         """
-        # 验证输入
+        # Validate input
         if not customer_name or len(customer_name.strip()) == 0:
-            raise ValueError("客户名称不能为空")
+            raise ValueError("Customer name cannot be empty")
 
         if not contact_number or len(contact_number.strip()) == 0:
-            raise ValueError("联系电话不能为空")
+            raise ValueError("Contact number cannot be empty")
 
         if not shipping_address or len(shipping_address.strip()) == 0:
-            raise ValueError("收货地址不能为空")
+            raise ValueError("Shipping address cannot be empty")
 
-        # 检查电话号码是否已存在
+        # Check if contact number already exists
         if self.customer_dao.customer_exists(contact_number.strip()):
-            raise ValueError(f"联系电话 '{contact_number}' 已被使用")
+            raise ValueError(f"Contact number '{contact_number}' is already in use")
 
         try:
             affected_rows, customer_id = self.customer_dao.create_customer(
@@ -61,11 +61,11 @@ class CustomerService:
             if affected_rows > 0:
                 return self.get_customer_by_id(customer_id)
             else:
-                raise Exception("创建客户失败")
+                raise Exception("Failed to create customer")
         except Exception as e:
-            raise Exception(f"创建客户失败: {str(e)}")
+            raise Exception(f"Failed to create customer: {str(e)}")
 
     def customer_exists(self, customer_id: int) -> bool:
-        """检查客户是否存在"""
+        """Check if a customer exists"""
         customer = self.customer_dao.get_customer_by_id(customer_id)
         return customer is not None

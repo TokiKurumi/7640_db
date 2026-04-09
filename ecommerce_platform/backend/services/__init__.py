@@ -1,6 +1,6 @@
 """
-服务层 - 业务逻辑层
-包含所有业务逻辑和事务处理
+Service Layer - Business Logic Layer
+Contains all business logic and transaction processing
 """
 
 from .vendor_service import VendorService

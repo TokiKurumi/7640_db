@@ -1,5 +1,5 @@
 """
-数据模型层 - 定义所有Pydantic模型
+Data Model Layer - Defines all Pydantic models
 """
 
 from .vendor import VendorBase, VendorResponse

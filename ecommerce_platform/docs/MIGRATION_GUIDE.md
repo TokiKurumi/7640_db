@@ -1,35 +1,35 @@
-# 分层架构迁移指南
+# Layered Architecture Migration Guide
 
-## 📋 新旧架构对比
+## 📋 Old vs. New Architecture Comparison
 
-### 旧架构 (单文件)
+### Old Architecture (Single File)
 ```
 backend/
-└── app.py (1,200+ 行)
-    ├── 模型定义
-    ├── 数据库连接
-    ├── 业务逻辑
-    ├── 路由定义
-    └── 混乱的职责
+└── app.py (1,200+ lines)
+    ├── Model Definitions
+    ├── Database Connection
+    ├── Business Logic
+    ├── Route Definitions
+    └── Tangled Responsibilities
 ```
 
-### 新架构 (分层)
+### New Architecture (Layered)
 ```
 backend/
-├── main.py                  # 主应用 (简洁)
-├── models/                  # 数据模型
-├── routes/                  # API 接口
-├── services/               # 业务逻辑
-└── dao/                    # 数据访问
+├── main.py                  # Main Application (lean)
+├── models/                  # Data Models
+├── routes/                  # API Endpoints
+├── services/               # Business Logic
+└── dao/                    # Data Access
 ```
 
 ---
 
-## 🔄 迁移步骤
+## 🔄 Migration Steps
 
-### Step 1: 更新导入
+### Step 1: Update Imports
 
-**旧代码:**
+**Old Code:**
 ```python
 from fastapi import FastAPI
 from models import ProductResponse
@@ -37,7 +37,7 @@ from models import ProductResponse
 app = FastAPI()
 ```
 
-**新代码:**
+**New Code:**
 ```python
 from fastapi import FastAPI
 from routes import router
@@ -46,25 +46,25 @@ app = FastAPI()
 app.include_router(router)
 ```
 
-### Step 2: 调用 API
+### Step 2: Call the API
 
-**旧方式:** 直接数据库操作
+**Old Way:** Direct database operations
 ```python
 cursor.execute("SELECT * FROM products")
 products = cursor.fetchall()
 ```
 
-**新方式:** 通过服务层
+**New Way:** Through the service layer
 ```python
 product_service = ProductService(db_config)
 products = product_service.get_all_products()
 ```
 
-### Step 3: 添加新功能
+### Step 3: Add New Features
 
-只需要三个步骤:
+Just three steps:
 
-1. **在 Service 层添加业务逻辑**
+1. **Add business logic in the Service layer**
    ```python
    # services/product_service.py
    def get_discounted_products(self, discount_percent: float):
@@ -72,7 +72,7 @@ products = product_service.get_all_products()
        return [p for p in products if p['discount'] > discount_percent]
    ```
 
-2. **在 Routes 层添加端点**
+2. **Add an endpoint in the Routes layer**
    ```python
    # routes/__init__.py
    @router.get("/products/discounted")
@@ -80,56 +80,56 @@ products = product_service.get_all_products()
        return product_service.get_discounted_products(discount)
    ```
 
-3. **完成!** 无需修改 DAO 或模型
+3. **Done!** No changes needed in DAO or Models.
 
 ---
 
-## 📁 文件说明
+## 📁 File Descriptions
 
-### Models 层文件
+### Models Layer Files
 
-| 文件 | 功能 |
+| File | Function |
 |-----|-----|
-| `models/__init__.py` | 导出所有模型 |
-| `models/vendor.py` | 供应商数据模型 |
-| `models/product.py` | 产品数据模型 |
-| `models/customer.py` | 客户数据模型 |
-| `models/order.py` | 订单数据模型 |
-| `models/transaction.py` | 交易数据模型 |
+| `models/__init__.py` | Exports all models |
+| `models/vendor.py` | Vendor data model |
+| `models/product.py` | Product data model |
+| `models/customer.py` | Customer data model |
+| `models/order.py` | Order data model |
+| `models/transaction.py` | Transaction data model |
 
-### Routes 层文件
+### Routes Layer Files
 
-| 文件 | 功能 |
+| File | Function |
 |-----|-----|
-| `routes/__init__.py` | 所有 API 端点定义 |
+| `routes/__init__.py` | All API endpoint definitions |
 
-### Services 层文件
+### Services Layer Files
 
-| 文件 | 功能 |
+| File | Function |
 |-----|-----|
-| `services/__init__.py` | 导出所有服务 |
-| `services/vendor_service.py` | 供应商业务逻辑 |
-| `services/product_service.py` | 产品业务逻辑 |
-| `services/customer_service.py` | 客户业务逻辑 |
-| `services/order_service.py` | 订单业务逻辑 |
-| `services/transaction_service.py` | 交易业务逻辑 |
+| `services/__init__.py` | Exports all services |
+| `services/vendor_service.py` | Vendor business logic |
+| `services/product_service.py` | Product business logic |
+| `services/customer_service.py` | Customer business logic |
+| `services/order_service.py` | Order business logic |
+| `services/transaction_service.py` | Transaction business logic |
 
-### DAO 层文件
+### DAO Layer Files
 
-| 文件 | 功能 |
+| File | Function |
 |-----|-----|
-| `dao/__init__.py` | 基类和导出 |
-| `dao/vendor_dao.py` | 供应商数据访问 |
-| `dao/product_dao.py` | 产品数据访问 |
-| `dao/customer_dao.py` | 客户数据访问 |
-| `dao/order_dao.py` | 订单数据访问 |
-| `dao/transaction_dao.py` | 交易数据访问 |
+| `dao/__init__.py` | Base class and exports |
+| `dao/vendor_dao.py` | Vendor data access |
+| `dao/product_dao.py` | Product data access |
+| `dao/customer_dao.py` | Customer data access |
+| `dao/order_dao.py` | Order data access |
+| `dao/transaction_dao.py` | Transaction data access |
 
 ---
 
-## 🧪 如何在新架构中测试
+## 🧪 How to Test in the New Architecture
 
-### 测试 DAO 层
+### Testing the DAO Layer
 
 ```python
 # test_dao.py
@@ -145,7 +145,7 @@ def test_get_product_by_id():
     assert product['product_id'] == 1
 ```
 
-### 测试 Service 层
+### Testing the Service Layer
 
 ```python
 # test_service.py
@@ -164,7 +164,7 @@ def test_create_product():
     service.product_dao.create_product.assert_called_once()
 ```
 
-### 测试 Routes 层
+### Testing the Routes Layer
 
 ```python
 # test_routes.py
@@ -181,158 +181,158 @@ def test_get_products():
 
 ---
 
-## 🐛 常见错误
+## 🐛 Common Errors
 
-### 错误 1: 导入路径错误
+### Error 1: Incorrect Import Path
 
-❌ **错误:**
+❌ **Incorrect:**
 ```python
-from models.product import ProductBase  # 相对路径错误
+from models.product import ProductBase  # Incorrect relative path
 ```
 
-✅ **正确:**
+✅ **Correct:**
 ```python
-from models import ProductBase  # 通过 __init__.py 导入
+from models import ProductBase  # Import via __init__.py
 ```
 
-### 错误 2: 直接操作数据库
+### Error 2: Direct Database Operations
 
-❌ **错误:**
+❌ **Incorrect:**
 ```python
-# 在 Route 中直接执行 SQL
+# Executing SQL directly in a Route
 conn = pymysql.connect(...)
 cursor = conn.cursor()
 cursor.execute("SELECT * FROM products")
 ```
 
-✅ **正确:**
+✅ **Correct:**
 ```python
-# 通过 Service 层操作
+# Operate through the Service layer
 return product_service.get_all_products()
 ```
 
-### 错误 3: 业务逻辑在 Route 中
+### Error 3: Business Logic in a Route
 
-❌ **错误:**
+❌ **Incorrect:**
 ```python
 @router.post("/orders")
 async def create_order(order: OrderBase):
-    # 不要在这里写业务逻辑!
+    # Don't write business logic here!
     if not customer.exists:
         raise HTTPException()
     # ...
 ```
 
-✅ **正确:**
+✅ **Correct:**
 ```python
 @router.post("/orders")
 async def create_order(order: OrderBase):
-    # 让 Service 处理业务逻辑
+    # Let the Service handle business logic
     return order_service.create_order(order.customer_id, items)
 ```
 
 ---
 
-## 📊 性能对比
+## 📊 Performance Comparison
 
-### 代码行数
+### Lines of Code
 
-| 组件 | 旧架构 | 新架构 | 说明 |
+| Component | Old Architecture | New Architecture | Notes |
 |-----|--------|--------|------|
-| app.py | 2000+ | - | 单个文件太大 |
-| main.py | - | 50 | 简洁清晰 |
-| routes | - | 250 | 所有端点 |
-| services | - | 800 | 业务逻辑 |
-| dao | - | 400 | 数据访问 |
-| models | - | 150 | 数据模型 |
-| **总计** | 2000+ | 1650 | 减少 17% |
+| app.py | 2000+ | - | Single file is too large |
+| main.py | - | 50 | Lean and clear |
+| routes | - | 250 | All endpoints |
+| services | - | 800 | Business logic |
+| dao | - | 400 | Data access |
+| models | - | 150 | Data models |
+| **Total** | 2000+ | 1650 | 17% reduction |
 
-### 维护性
+### Maintainability
 
-| 方面 | 旧架构 | 新架构 |
+| Aspect | Old Architecture | New Architecture |
 |-----|--------|--------|
-| 查找功能 | 困难 | 简单 |
-| 添加新端点 | 修改大文件 | 新增小文件 |
-| 单元测试 | 难 | 容易 |
-| 代码复用 | 低 | 高 |
-| 调试 | 困难 | 简单 |
+| Finding features | Difficult | Easy |
+| Adding new endpoints | Modify large file | Add small file |
+| Unit testing | Hard | Easy |
+| Code reuse | Low | High |
+| Debugging | Difficult | Easy |
 
 ---
 
-## 🎯 最佳实践
+## 🎯 Best Practices
 
-### 1. 严格遵循分层原则
+### 1. Strictly Follow Layering Principles
 
 ```
 Routes → Services → DAO → Database
 
-✓ 只能向下调用
-✗ 不能跨层调用
-✗ 不能向上调用
+✓ Can only call downwards
+✗ Cannot call across layers
+✗ Cannot call upwards
 ```
 
-### 2. Service 层应该是薄的
+### 2. Services Should Be Thin
 
 ```python
-# ✓ 好的 Service
+# ✓ Good Service
 def create_product(self, vendor_id, name, price):
-    self.vendor_dao.validate_vendor(vendor_id)  # 验证
-    return self.product_dao.create(...)  # 创建
+    self.vendor_dao.validate_vendor(vendor_id)  # Validation
+    return self.product_dao.create(...)  # Creation
 ```
 
 ```python
-# ✗ 不好的 Service (太厚了)
+# ✗ Bad Service (too thick)
 def create_product(self, ...):
-    # 100 行业务逻辑
-    # 50 行计算
-    # 30 行验证
+    # 100 lines of business logic
+    # 50 lines of calculations
+    # 30 lines of validation
     # ...
 ```
 
-### 3. DAO 应该是通用的
+### 3. DAOs Should Be Generic
 
 ```python
-# ✓ 好的 DAO (通用)
+# ✓ Good DAO (generic)
 def execute_query(self, sql, params):
-    # 可以用于任何查询
+    # Can be used for any query
 
 def execute_update(self, sql, params):
-    # 可以用于任何更新
+    # Can be used for any update
 ```
 
-### 4. 使用类型提示
+### 4. Use Type Hinting
 
 ```python
-# ✓ 使用类型提示
+# ✓ With type hints
 def create_product(self, vendor_id: int, name: str, price: float) -> Dict[str, Any]:
     ...
 
-# ✗ 不使用类型提示
+# ✗ Without type hints
 def create_product(self, vendor_id, name, price):
     ...
 ```
 
 ---
 
-## 🚀 后续优化
+## 🚀 Future Optimizations
 
-### 1. 添加缓存层
+### 1. Add a Caching Layer
 
 ```
 Routes → Cache → Services → DAO → Database
 ```
 
-### 2. 添加日志层
+### 2. Add a Logging Layer
 
 ```python
-# 在每一层记录日志
-logger.info(f"获取产品 ID: {product_id}")
+# Log at each layer
+logger.info(f"Fetching product ID: {product_id}")
 ```
 
-### 3. 添加监控
+### 3. Add Monitoring
 
 ```python
-# 监控 API 调用时间
+# Monitor API call duration
 @router.get("/products")
 async def get_products():
     start_time = time.time()
@@ -342,10 +342,10 @@ async def get_products():
     return result
 ```
 
-### 4. 添加认证层
+### 4. Add an Authentication Layer
 
 ```python
-# 在 Routes 中验证用户身份
+# Verify user identity in Routes
 @router.post("/orders")
 async def create_order(order: OrderBase, current_user: User = Depends(get_current_user)):
     ...
@@ -353,32 +353,31 @@ async def create_order(order: OrderBase, current_user: User = Depends(get_curren
 
 ---
 
-## 📚 参考资源
+## 📚 Resources
 
-- [FastAPI 官方文档](https://fastapi.tiangolo.com/)
-- [Pydantic 数据验证](https://docs.pydantic.dev/)
+- [FastAPI Official Documentation](https://fastapi.tiangolo.com/)
+- [Pydantic Data Validation](https://docs.pydantic.dev/)
 - [SQLAlchemy ORM](https://www.sqlalchemy.org/)
-- [MVC/MVP/MVVM 架构模式](https://en.wikipedia.org/wiki/Architectural_pattern)
+- [MVC/MVP/MVVM Architectural Patterns](https://en.wikipedia.org/wiki/Architectural_pattern)
 
 ---
 
-## ✅ 总结
+## ✅ Summary
 
-新的分层架构提供了:
+The new layered architecture provides:
 
-- 🎯 **清晰的代码组织**
-- 🔧 **易于维护和扩展**
-- 🧪 **高度可测试**
-- 🔄 **代码复用**
-- 📊 **性能优化**
-- 🚀 **可扩展基础**
+- 🎯 **Clear Code Organization**
+- 🔧 **Easy Maintenance and Extension**
+- 🧪 **High Testability**
+- 🔄 **Code Reusability**
+- 📊 **Performance Optimization**
+- 🚀 **Scalable Foundation**
 
-现在你可以:
-- 独立开发每一层
-- 并行测试每个模块
-- 快速添加新功能
-- 轻松修复 Bug
-- 安心地重构代码
+Now you can:
+- Develop each layer independently
+- Test each module in parallel
+- Add new features quickly
+- Fix bugs easily
+- Refactor code with confidence
 
-**祝你在新架构下开发顺利! 🎉**
-
+**Happy coding in the new architecture! 🎉**

@@ -1,5 +1,5 @@
 """
-标签页控制器 - 简洁的单个标签页
+Tab Controller - A simple single tab page
 """
 
 import tkinter as tk
@@ -8,12 +8,12 @@ from abc import ABC, abstractmethod
 
 
 class TabController(ABC):
-    """标签页基类"""
+    """Base class for tabs"""
     
     def __init__(self, notebook: ttk.Notebook, title: str):
         """
-        :param notebook: Notebook 控件
-        :param title: 标签页标题
+        :param notebook: The notebook widget
+        :param title: The title of the tab
         """
         self.notebook = notebook
         self.title = title
@@ -24,9 +24,9 @@ class TabController(ABC):
 
     @abstractmethod
     def setup_ui(self):
-        """设置 UI - 由子类实现"""
+        """Set up the UI - to be implemented by subclasses"""
         pass
 
     def refresh(self):
-        """刷新数据 - 由子类实现"""
+        """Refresh data - to be implemented by subclasses"""
         pass

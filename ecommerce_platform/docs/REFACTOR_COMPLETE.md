@@ -1,49 +1,49 @@
-# ✅ 分层架构重构完成
+# ✅ Layered Architecture Refactoring Complete
 
-## 🎉 迁移完成
+## 🎉 Migration Complete
 
-已成功将 E-Commerce Platform 后端从单文件架构重构为标准的**四层分层架构**。
+The E-Commerce Platform backend has been successfully refactored from a single-file architecture to a standard **four-layer architecture**.
 
 ---
 
-## 📊 项目结构对比
+## 📊 Project Structure Comparison
 
-### 旧结构 (单文件)
+### Old Structure (Single File)
 ```
 backend/
-└── app.py (2000+ 行)
-    ├── ❌ 模型定义
-    ├── ❌ 数据库连接
-    ├── ❌ SQL 查询
-    ├── ❌ 业务逻辑
-    ├── ❌ 路由定义
-    ├── ❌ 错误处理
-    └── ❌ 职责混乱
+└── app.py (2000+ lines)
+    ├── ❌ Model Definitions
+    ├── ❌ Database Connection
+    ├── ❌ SQL Queries
+    ├── ❌ Business Logic
+    ├── ❌ Route Definitions
+    ├── ❌ Error Handling
+    └── ❌ Tangled Responsibilities
 ```
 
-### 新结构 (分层)
+### New Structure (Layered)
 ```
 backend/
-├── main.py                 (50 行)     # ✅ 应用入口 - 简洁
+├── main.py                 (50 lines)     # ✅ Application Entrypoint - Lean
 │
-├── models/                 (150 行)    # ✅ 数据模型层
+├── models/                 (150 lines)    # ✅ Data Model Layer
 │   ├── vendor.py
 │   ├── product.py
 │   ├── customer.py
 │   ├── order.py
 │   └── transaction.py
 │
-├── routes/                 (250 行)    # ✅ API 接口层
+├── routes/                 (250 lines)    # ✅ API Interface Layer
 │   └── __init__.py
 │
-├── services/               (800 行)    # ✅ 业务逻辑层
+├── services/               (800 lines)    # ✅ Business Logic Layer
 │   ├── vendor_service.py
 │   ├── product_service.py
 │   ├── customer_service.py
 │   ├── order_service.py
 │   └── transaction_service.py
 │
-├── dao/                    (400 行)    # ✅ 数据访问层
+├── dao/                    (400 lines)    # ✅ Data Access Layer
 │   ├── __init__.py
 │   ├── vendor_dao.py
 │   ├── product_dao.py
@@ -51,34 +51,34 @@ backend/
 │   ├── order_dao.py
 │   └── transaction_dao.py
 │
-└── app.py                  (仅用来兼容)
+└── app.py                  (For compatibility only)
 ```
 
 ---
 
-## 📈 架构改进
+## 📈 Architectural Improvements
 
-| 方面 | 旧架构 | 新架构 | 改进 |
+| Aspect | Old Architecture | New Architecture | Improvement |
 |-----|--------|--------|------|
-| **文件数** | 1 | 21 | ✅ 模块化 |
-| **行数** | 2000+ | 1650 | ✅ 精简 25% |
-| **职责清晰度** | ❌ 混乱 | ✅ 清晰 | ✅ 满分 |
-| **代码复用** | ❌ 低 | ✅ 高 | ✅ 优化 |
-| **可测试性** | ❌ 困难 | ✅ 容易 | ✅ 单元测试 |
-| **可维护性** | ❌ 困难 | ✅ 容易 | ✅ 易于修改 |
-| **可扩展性** | ❌ 受限 | ✅ 灵活 | ✅ 添加功能快 |
+| **File Count** | 1 | 21 | ✅ Modular |
+| **Line Count** | 2000+ | 1650 | ✅ 25% leaner |
+| **Clarity of Responsibilities** | ❌ Tangled | ✅ Clear | ✅ Perfect Score |
+| **Code Reuse** | ❌ Low | ✅ High | ✅ Optimized |
+| **Testability** | ❌ Difficult | ✅ Easy | ✅ Unit Tests |
+| **Maintainability** | ❌ Difficult | ✅ Easy | ✅ Easy to modify |
+| **Scalability** | ❌ Limited | ✅ Flexible | ✅ Fast to add features |
 
 ---
 
-## 🏛️ 四层架构详解
+## 🏛️ Four-Layer Architecture Explained
 
-### 第1层: Models (数据模型)
+### Layer 1: Models (Data Models)
 ```
-职责: 定义数据结构和验证规则
-文件: models/*.py
-技术: Pydantic BaseModel
+Responsibility: Define data structures and validation rules
+Files: models/*.py
+Technology: Pydantic BaseModel
 
-示例:
+Examples:
   - VendorBase / VendorResponse
   - ProductBase / ProductResponse
   - CustomerBase / CustomerResponse
@@ -86,13 +86,13 @@ backend/
   - TransactionResponse
 ```
 
-### 第2层: Routes (API 接口)
+### Layer 2: Routes (API Interface)
 ```
-职责: 处理 HTTP 请求和响应
-文件: routes/__init__.py
-技术: FastAPI 路由
+Responsibility: Handle HTTP requests and responses
+File: routes/__init__.py
+Technology: FastAPI Routing
 
-端点:
+Endpoints:
   - GET/POST /vendors
   - GET/POST /products
   - GET /products/search
@@ -101,28 +101,28 @@ backend/
   - GET /transactions
 ```
 
-### 第3层: Services (业务逻辑)
+### Layer 3: Services (Business Logic)
 ```
-职责: 处理复杂业务规则和数据验证
-文件: services/*.py
-技术: Python 类
+Responsibility: Handle complex business rules and data validation
+Files: services/*.py
+Technology: Python Classes
 
-服务:
-  - VendorService: 供应商业务
-  - ProductService: 产品业务
-  - CustomerService: 客户业务
-  - OrderService: 订单业务 (最复杂)
-  - TransactionService: 交易业务
+Services:
+  - VendorService: Vendor business logic
+  - ProductService: Product business logic
+  - CustomerService: Customer business logic
+  - OrderService: Order business logic (most complex)
+  - TransactionService: Transaction business logic
 ```
 
-### 第4层: DAO (数据访问)
+### Layer 4: DAO (Data Access)
 ```
-职责: 与数据库交互
-文件: dao/*.py
-技术: PyMySQL
+Responsibility: Interact with the database
+Files: dao/*.py
+Technology: PyMySQL
 
-对象:
-  - BaseDAO: 基础类
+Objects:
+  - BaseDAO: Base class
   - VendorDAO
   - ProductDAO
   - CustomerDAO
@@ -132,44 +132,44 @@ backend/
 
 ---
 
-## 🔄 数据流示例
+## 🔄 Data Flow Example
 
-### 创建订单流程
+### Create Order Process
 
 ```
-1️⃣ HTTP 请求 (用户)
+1️⃣ HTTP Request (User)
    POST /api/orders
    {"customer_id": 1, "items": [...]}
    
    ↓
    
-2️⃣ Routes 层 (接收请求)
+2️⃣ Routes Layer (Receives request)
    @router.post("/orders")
    async def create_order(order: OrderBase):
        return order_service.create_order(...)
    
    ↓
    
-3️⃣ Services 层 (业务逻辑)
+3️⃣ Services Layer (Business logic)
    def create_order(self, customer_id, items):
-       ✓ 验证客户是否存在
-       ✓ 验证产品和库存
-       ✓ 计算订单总额
-       ✓ 调用 DAO 创建订单
-       ✓ 扣减库存
-       ✓ 创建交易记录
+       ✓ Validate if customer exists
+       ✓ Validate products and stock
+       ✓ Calculate order total
+       ✓ Call DAO to create order
+       ✓ Deduct stock
+       ✓ Create transaction record
    
    ↓
    
-4️⃣ DAO 层 (数据操作)
-   ✓ 插入订单表
-   ✓ 插入订单项表
-   ✓ 更新产品库存
-   ✓ 插入交易表
+4️⃣ DAO Layer (Data operations)
+   ✓ Insert into orders table
+   ✓ Insert into order_items table
+   ✓ Update product stock
+   ✓ Insert into transactions table
    
    ↓
    
-5️⃣ MySQL 数据库 (持久化)
+5️⃣ MySQL Database (Persistence)
    INSERT INTO orders ...
    INSERT INTO order_items ...
    UPDATE products SET stock_quantity = ...
@@ -177,7 +177,7 @@ backend/
    
    ↓
    
-6️⃣ 返回响应 (HTTP 200)
+6️⃣ Return Response (HTTP 200)
    {
      "order_id": 1,
      "customer_id": 1,
@@ -189,233 +189,233 @@ backend/
 
 ---
 
-## 📋 文件清单
+## 📋 File Checklist
 
-### Models 层 (5 个文件 + __init__)
-- [x] `models/__init__.py` - 模型导出
-- [x] `models/vendor.py` - 供应商模型
-- [x] `models/product.py` - 产品模型
-- [x] `models/customer.py` - 客户模型
-- [x] `models/order.py` - 订单模型
-- [x] `models/transaction.py` - 交易模型
+### Models Layer (5 files + __init__)
+- [x] `models/__init__.py` - Model exports
+- [x] `models/vendor.py` - Vendor model
+- [x] `models/product.py` - Product model
+- [x] `models/customer.py` - Customer model
+- [x] `models/order.py` - Order model
+- [x] `models/transaction.py` - Transaction model
 
-### Routes 层 (1 个文件)
-- [x] `routes/__init__.py` - 所有 API 端点
+### Routes Layer (1 file)
+- [x] `routes/__init__.py` - All API endpoints
 
-### Services 层 (5 个文件 + __init__)
-- [x] `services/__init__.py` - 服务导出
-- [x] `services/vendor_service.py` - 供应商服务
-- [x] `services/product_service.py` - 产品服务
-- [x] `services/customer_service.py` - 客户服务
-- [x] `services/order_service.py` - 订单服务
-- [x] `services/transaction_service.py` - 交易服务
+### Services Layer (5 files + __init__)
+- [x] `services/__init__.py` - Service exports
+- [x] `services/vendor_service.py` - Vendor service
+- [x] `services/product_service.py` - Product service
+- [x] `services/customer_service.py` - Customer service
+- [x] `services/order_service.py` - Order service
+- [x] `services/transaction_service.py` - Transaction service
 
-### DAO 层 (5 个文件 + 基类)
-- [x] `dao/__init__.py` - DAO 基类和导出
-- [x] `dao/vendor_dao.py` - 供应商 DAO
-- [x] `dao/product_dao.py` - 产品 DAO
-- [x] `dao/customer_dao.py` - 客户 DAO
-- [x] `dao/order_dao.py` - 订单 DAO
-- [x] `dao/transaction_dao.py` - 交易 DAO
+### DAO Layer (5 files + base class)
+- [x] `dao/__init__.py` - DAO base class and exports
+- [x] `dao/vendor_dao.py` - Vendor DAO
+- [x] `dao/product_dao.py` - Product DAO
+- [x] `dao/customer_dao.py` - Customer DAO
+- [x] `dao/order_dao.py` - Order DAO
+- [x] `dao/transaction_dao.py` - Transaction DAO
 
-### 应用入口
-- [x] `main.py` - FastAPI 主应用 (新)
-- [x] `app.py` - 保留用于兼容性
+### Application Entrypoint
+- [x] `main.py` - FastAPI main application (new)
+- [x] `app.py` - Kept for compatibility
 
 ---
 
-## 🚀 如何使用新架构
+## 🚀 How to Use the New Architecture
 
-### 启动应用
+### Start the Application
 
 ```bash
-# 方法 1: 使用 main.py
+# Method 1: Use main.py
 python backend/main.py
 
-# 方法 2: 使用 uvicorn
+# Method 2: Use uvicorn
 uvicorn backend.main:app --reload --port 8000
 ```
 
-### 访问 API
+### Access the API
 
 ```
-API 文档:    http://localhost:8000/docs
+API Docs:    http://localhost:8000/docs
 ReDoc:      http://localhost:8000/redoc
 Health:     http://localhost:8000/api/health
 ```
 
-### 导入和使用
+### Import and Use
 
 ```python
-# 旧方式 (不推荐)
+# Old way (not recommended)
 from app import app
 
-# 新方式 (推荐)
+# New way (recommended)
 from main import app
 ```
 
 ---
 
-## ✨ 新架构的优势
+## ✨ Advantages of the New Architecture
 
-### 1. 📚 清晰的职责分工
+### 1. 📚 Clear Separation of Concerns
 ```
-Models:   数据定义和验证
-Routes:   HTTP 接口
-Services: 业务逻辑
-DAO:      数据库操作
+Models:   Data definition and validation
+Routes:   HTTP interface
+Services: Business logic
+DAO:      Database operations
 ```
 
-### 2. 🔧 易于维护
-- 需要修改 API 格式? → 修改 Models
-- 需要修改业务规则? → 修改 Services
-- 需要修改数据库? → 修改 DAO
-- 需要添加端点? → 修改 Routes
+### 2. 🔧 Easy to Maintain
+- Need to change API format? → Modify Models
+- Need to change business rules? → Modify Services
+- Need to change the database? → Modify DAO
+- Need to add an endpoint? → Modify Routes
 
-### 3. 🧪 易于测试
+### 3. 🧪 Easy to Test
 ```python
-# 可以独立测试每一层
-test_vendor_dao()          # 测试数据访问
-test_vendor_service()      # 测试业务逻辑
-test_vendor_routes()       # 测试 API
+# Each layer can be tested independently
+test_vendor_dao()          # Test data access
+test_vendor_service()      # Test business logic
+test_vendor_routes()       # Test API
 ```
 
-### 4. 🔄 高度复用
+### 4. 🔄 High Reusability
 ```python
-# ProductService 可被多个 Route 调用
+# ProductService can be called by multiple Routes
 get_all_products()
 search_products()
 get_products_by_vendor()
 
-# 这些都共享同一个 ProductService 实例
+# All share the same ProductService instance
 ```
 
-### 5. 📈 可扩展性
-添加新功能只需:
-1. 在 Service 层写逻辑
-2. 在 Routes 层添加端点
-3. （可选）在 Models 层定义新模型
+### 5. 📈 Scalability
+Adding new features only requires:
+1. Writing logic in the Service layer
+2. Adding an endpoint in the Routes layer
+3. (Optional) Defining a new model in the Models layer
 
-不需要修改数据库或 DAO 层!
+No need to modify the database or DAO layer!
 
-### 6. 🚀 性能优化
-可以在各层添加:
-- 缓存层 (在 Service 中)
-- 日志记录 (在各层)
-- 监控指标 (在各层)
-- 认证验证 (在 Routes 中)
-
----
-
-## 📚 相关文档
-
-- **架构详解**: `docs/ARCHITECTURE.md`
-- **迁移指南**: `docs/MIGRATION_GUIDE.md`
-- **项目总结**: `PROJECT_SUMMARY.md`
-- **API 文档**: http://localhost:8000/docs
+### 6. 🚀 Performance Optimization
+Can be added at various layers:
+- Caching layer (in Services)
+- Logging (in all layers)
+- Monitoring metrics (in all layers)
+- Authentication (in Routes)
 
 ---
 
-## 🎯 后续可以做的事
+## 📚 Related Documents
 
-1. ✅ **添加缓存**
-   - 使用 Redis 缓存产品信息
-   - 减少数据库查询
-
-2. ✅ **添加日志系统**
-   - 记录所有操作
-   - 便于调试
-
-3. ✅ **添加监控**
-   - 统计 API 调用时间
-   - 监控系统健康
-
-4. ✅ **添加认证**
-   - 用户登录验证
-   - 权限控制
-
-5. ✅ **添加数据验证**
-   - 更严格的业务规则
-   - 更好的错误提示
-
-6. ✅ **添加单元测试**
-   - 测试每一层
-   - 确保代码质量
+- **Architecture Details**: `docs/ARCHITECTURE.md`
+- **Migration Guide**: `docs/MIGRATION_GUIDE.md`
+- **Project Summary**: `PROJECT_SUMMARY.md`
+- **API Docs**: http://localhost:8000/docs
 
 ---
 
-## 🏆 架构评分
+## 🎯 What's Next
 
-| 评分项 | 分数 | 说明 |
+1. ✅ **Add Caching**
+   - Use Redis to cache product information
+   - Reduce database queries
+
+2. ✅ **Add a Logging System**
+   - Record all operations
+   - Facilitate debugging
+
+3. ✅ **Add Monitoring**
+   - Track API call duration
+   - Monitor system health
+
+4. ✅ **Add Authentication**
+   - User login verification
+   - Access control
+
+5. ✅ **Add Data Validation**
+   - Stricter business rules
+   - Better error messages
+
+6. ✅ **Add Unit Tests**
+   - Test each layer
+   - Ensure code quality
+
+---
+
+## 🏆 Architecture Score
+
+| Metric | Score | Notes |
 |--------|------|------|
-| 代码组织 | ⭐⭐⭐⭐⭐ | 完美的分层 |
-| 可维护性 | ⭐⭐⭐⭐⭐ | 极易维护 |
-| 可测试性 | ⭐⭐⭐⭐⭐ | 高度可测试 |
-| 代码复用 | ⭐⭐⭐⭐⭐ | 高度复用 |
-| 可扩展性 | ⭐⭐⭐⭐⭐ | 易于扩展 |
-| 性能 | ⭐⭐⭐⭐☆ | 优异 (无缓存) |
-| 文档 | ⭐⭐⭐⭐⭐ | 完整详细 |
+| Code Organization | ⭐⭐⭐⭐⭐ | Perfect layering |
+| Maintainability | ⭐⭐⭐⭐⭐ | Extremely easy to maintain |
+| Testability | ⭐⭐⭐⭐⭐ | Highly testable |
+| Code Reuse | ⭐⭐⭐⭐⭐ | Highly reusable |
+| Scalability | ⭐⭐⭐⭐⭐ | Easy to extend |
+| Performance | ⭐⭐⭐⭐☆ | Excellent (without cache) |
+| Documentation | ⭐⭐⭐⭐⭐ | Complete and detailed |
 
-**总体评分: 4.9/5.0 ⭐⭐⭐⭐⭐**
+**Overall Score: 4.9/5.0 ⭐⭐⭐⭐⭐**
 
 ---
 
-## 📝 代码示例
+## 📝 Code Examples
 
-### 示例 1: 调用服务获取产品
+### Example 1: Calling a service to get products
 
 ```python
-# 在 Route 中调用
+# In a Route
 from services import ProductService
 from dao import DatabaseConfig
 
 db_config = DatabaseConfig()
 product_service = ProductService(db_config)
 
-# 获取所有产品
+# Get all products
 products = product_service.get_all_products()
 
-# 搜索产品
+# Search for products
 results = product_service.search_products_by_tag("electronics")
 
-# 检查库存
+# Check stock availability
 if product_service.check_stock_availability(product_id=1, required_quantity=5):
-    print("库存充足")
+    print("Stock is sufficient")
 ```
 
-### 示例 2: 在 Service 中使用多个 DAO
+### Example 2: Using multiple DAOs in a Service
 
 ```python
-# OrderService 中的复杂业务逻辑
+# Complex business logic in OrderService
 def create_order(self, customer_id, items):
-    # 1. 使用 CustomerDAO 验证客户
+    # 1. Use CustomerDAO to validate the customer
     customer = self.customer_dao.get_customer_by_id(customer_id)
     
-    # 2. 使用 ProductDAO 验证产品
+    # 2. Use ProductDAO to validate products
     for item in items:
         product = self.product_dao.get_product_by_id(item['product_id'])
     
-    # 3. 使用 OrderDAO 创建订单
+    # 3. Use OrderDAO to create the order
     order_id = self.order_dao.create_order(...)
     
-    # 4. 使用 TransactionDAO 创建交易
+    # 4. Use TransactionDAO to create a transaction
     self.transaction_dao.create_transaction(...)
 ```
 
-### 示例 3: 添加新功能
+### Example 3: Adding a new feature
 
 ```python
-# 只需要在 Service 层添加方法
+# Just add a method in the Service layer
 # services/product_service.py
 
 def get_popular_products(self, min_sales: int = 10):
-    """获取热销产品"""
+    """Get popular products"""
     products = self.get_all_products()
     return [p for p in products if p['sales'] > min_sales]
 ```
 
 ```python
-# 然后在 Route 层添加端点
+# Then add an endpoint in the Routes layer
 # routes/__init__.py
 
 @router.get("/products/popular")
@@ -423,44 +423,43 @@ async def get_popular_products(min_sales: int = 10):
     return product_service.get_popular_products(min_sales)
 ```
 
-**完成! 只需添加 2 个函数。**
+**Done! Just add 2 functions.**
 
 ---
 
-## ✅ 验证清单
+## ✅ Validation Checklist
 
-- [x] 模型层完成 (Models)
-- [x] 数据访问层完成 (DAO)
-- [x] 业务逻辑层完成 (Services)
-- [x] 接口层完成 (Routes)
-- [x] 主应用完成 (main.py)
-- [x] 架构文档完成
-- [x] 迁移指南完成
-- [x] 所有功能保持
-- [x] 所有端点可用
-- [x] 数据库兼容
-- [x] 可以直接使用
-
----
-
-## 🎉 结论
-
-E-Commerce Platform 已成功升级到**现代分层架构**! 🚀
-
-**现在您拥有:**
-- ✅ 清晰的代码组织
-- ✅ 易于维护的代码库
-- ✅ 高度可测试的代码
-- ✅ 灵活可扩展的基础
-- ✅ 专业级的项目结构
-- ✅ 完整的文档
-- ✅ 生产就绪
-
-**开始使用新架构吧! 🌟**
+- [x] Models layer complete
+- [x] Data Access layer complete (DAO)
+- [x] Business Logic layer complete (Services)
+- [x] Interface layer complete (Routes)
+- [x] Main application complete (main.py)
+- [x] Architecture documentation complete
+- [x] Migration guide complete
+- [x] All features preserved
+- [x] All endpoints available
+- [x] Database compatible
+- [x] Ready to use
 
 ---
 
-**日期**: 2026-04-06
-**版本**: 2.0.0 分层架构
-**状态**: ✅ 完成并生产就绪
+## 🎉 Conclusion
 
+The E-Commerce Platform has been successfully upgraded to a **modern layered architecture**! 🚀
+
+**You now have:**
+- ✅ Clear code organization
+- ✅ An easily maintainable codebase
+- ✅ Highly testable code
+- ✅ A flexible and scalable foundation
+- ✅ A professional-grade project structure
+- ✅ Complete documentation
+- ✅ Production-ready
+
+**Start using the new architecture! 🌟**
+
+---
+
+**Date**: 2026-04-06
+**Version**: 2.0.0 Layered Architecture
+**Status**: ✅ Complete and Production-Ready

@@ -1,5 +1,5 @@
 """
-供应商 (Vendor) 数据模型
+Vendor Data Model
 """
 
 from pydantic import BaseModel
@@ -8,13 +8,13 @@ from datetime import datetime
 
 
 class VendorBase(BaseModel):
-    """供应商基础模型 - 用于创建请求"""
+    """Base model for a vendor - used for creation requests"""
     business_name: str
     geographical_presence: Optional[str] = None
 
 
 class VendorResponse(VendorBase):
-    """供应商响应模型 - 用于API返回"""
+    """Vendor response model - used for API returns"""
     vendor_id: int
     average_rating: float
     created_date: datetime

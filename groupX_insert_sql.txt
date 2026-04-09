@@ -1,8 +1,8 @@
--- 创建数据库
+-- Create Database
 CREATE DATABASE IF NOT EXISTS ecommerce_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ecommerce_platform;
 
--- 1. 供应商表 vendors (匹配基础要求的vendor字段)
+-- 1. Vendors Table (matches basic vendor field requirements)
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
@@ -11,93 +11,93 @@ DROP TABLE IF EXISTS customers;
 DROP TABLE IF EXISTS vendors;
 
 CREATE TABLE vendors (
-    vendor_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '供应商唯一ID',
-    business_name VARCHAR(100) NOT NULL COMMENT '商家名称',
-    avg_rating DECIMAL(2,1) DEFAULT 0.0 COMMENT '客户平均评分',
-    geo_presence VARCHAR(200) NOT NULL COMMENT '地理位置',
+    vendor_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the vendor',
+    business_name VARCHAR(100) NOT NULL COMMENT 'Business name',
+    avg_rating DECIMAL(2,1) DEFAULT 0.0 COMMENT 'Average customer rating',
+    geo_presence VARCHAR(200) NOT NULL COMMENT 'Geographical presence',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='供应商信息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Vendor information table';
 
--- 2. 客户表 customers (匹配基础要求的customer字段)
+-- 2. Customers Table (matches basic customer field requirements)
 CREATE TABLE customers (
-    customer_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '客户唯一ID',
-    contact_number VARCHAR(20) NOT NULL UNIQUE COMMENT '联系电话',
-    shipping_address VARCHAR(200) NOT NULL COMMENT '收货地址',
+    customer_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the customer',
+    contact_number VARCHAR(20) NOT NULL UNIQUE COMMENT 'Contact phone number',
+    shipping_address VARCHAR(200) NOT NULL COMMENT 'Shipping address',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户信息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Customer information table';
 
--- 3. 产品表 products (匹配基础要求的product字段，最多3个标签)
+-- 3. Products Table (matches basic product field requirements, max 3 tags)
 CREATE TABLE products (
-    product_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '产品唯一ID',
-    vendor_id INT NOT NULL COMMENT '所属供应商ID',
-    product_name VARCHAR(100) NOT NULL COMMENT '产品名称',
-    price DECIMAL(10,2) NOT NULL COMMENT '售价',
-    stock_quantity INT NOT NULL DEFAULT 0 COMMENT '库存数量',
-    tag1 VARCHAR(50) DEFAULT NULL COMMENT '产品标签1',
-    tag2 VARCHAR(50) DEFAULT NULL COMMENT '产品标签2',
-    tag3 VARCHAR(50) DEFAULT NULL COMMENT '产品标签3',
+    product_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the product',
+    vendor_id INT NOT NULL COMMENT 'ID of the vendor who owns the product',
+    product_name VARCHAR(100) NOT NULL COMMENT 'Product name',
+    price DECIMAL(10,2) NOT NULL COMMENT 'Selling price',
+    stock_quantity INT NOT NULL DEFAULT 0 COMMENT 'Stock quantity',
+    tag1 VARCHAR(50) DEFAULT NULL COMMENT 'Product tag 1',
+    tag2 VARCHAR(50) DEFAULT NULL COMMENT 'Product tag 2',
+    tag3 VARCHAR(50) DEFAULT NULL COMMENT 'Product tag 3',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id) ON DELETE CASCADE,
     CHECK (stock_quantity >= 0),
     CHECK (price > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='产品信息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Product information table';
 
--- 4. 订单表 orders (匹配基础要求的order字段，支持跨供应商订单)
+-- 4. Orders Table (matches basic order field requirements, supports cross-vendor orders)
 CREATE TABLE orders (
-    order_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '订单唯一ID',
-    customer_id INT NOT NULL COMMENT '下单客户ID',
-    order_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '订单创建时间',
-    total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '订单总价',
-    order_status ENUM('pending_payment','pending_shipment','shipped','cancelled') DEFAULT 'pending_payment' COMMENT '订单状态',
+    order_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the order',
+    customer_id INT NOT NULL COMMENT 'ID of the customer who placed the order',
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Order creation time',
+    total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Total price of the order',
+    order_status ENUM('pending_payment','pending_shipment','shipped','cancelled') DEFAULT 'pending_payment' COMMENT 'Order status',
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单主表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Main order table';
 
--- 5. 订单-产品关联表 order_items (解决订单与产品多对多关系，支持跨供应商)
+-- 5. Order-Product Association Table (order_items) (solves many-to-many relationship, supports cross-vendor)
 CREATE TABLE order_items (
-    order_item_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '订单项唯一ID',
-    order_id INT NOT NULL COMMENT '所属订单ID',
-    product_id INT NOT NULL COMMENT '产品ID',
-    vendor_id INT NOT NULL COMMENT '产品所属供应商ID',
-    quantity INT NOT NULL COMMENT '购买数量',
-    item_price DECIMAL(10,2) NOT NULL COMMENT '下单时的产品单价',
+    order_item_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the order item',
+    order_id INT NOT NULL COMMENT 'ID of the order it belongs to',
+    product_id INT NOT NULL COMMENT 'Product ID',
+    vendor_id INT NOT NULL COMMENT 'ID of the vendor who owns the product',
+    quantity INT NOT NULL COMMENT 'Purchase quantity',
+    item_price DECIMAL(10,2) NOT NULL COMMENT 'Product unit price at the time of order',
     FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
     FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id) ON DELETE CASCADE,
     CHECK (quantity > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单详情表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Order details table';
 
--- 6. 交易表 transactions (匹配基础要求的transaction字段)
+-- 6. Transactions Table (matches basic transaction field requirements)
 CREATE TABLE transactions (
-    transaction_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '交易唯一ID',
-    order_id INT NOT NULL COMMENT '关联订单ID',
-    customer_id INT NOT NULL COMMENT '付款客户ID',
-    vendor_id INT NOT NULL COMMENT '收款供应商ID',
-    transaction_amount DECIMAL(10,2) NOT NULL COMMENT '交易金额',
-    transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '交易时间',
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique ID for the transaction',
+    order_id INT NOT NULL COMMENT 'Associated order ID',
+    customer_id INT NOT NULL COMMENT 'ID of the paying customer',
+    vendor_id INT NOT NULL COMMENT 'ID of the receiving vendor',
+    transaction_amount DECIMAL(10,2) NOT NULL COMMENT 'Transaction amount',
+    transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Transaction time',
     FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id) ON DELETE CASCADE,
     CHECK (transaction_amount > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易记录表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Transaction records table';
 
--- 插入测试示例数据
--- 供应商数据
+-- Insert sample test data
+-- Vendor data
 INSERT INTO vendors (business_name, avg_rating, geo_presence) VALUES
-('深圳电子数码商行', 4.8, '广东省深圳市宝安区'),
-('广州服装服饰店', 4.6, '广东省广州市天河区'),
-('上海家居生活馆', 4.9, '上海市浦东新区');
+('Shenzhen Digital Electronics Store', 4.8, 'Bao''an District, Shenzhen, Guangdong Province'),
+('Guangzhou Apparel & Accessories', 4.6, 'Tianhe District, Guangzhou, Guangdong Province'),
+('Shanghai Home & Living', 4.9, 'Pudong New Area, Shanghai');
 
--- 客户数据
+-- Customer data
 INSERT INTO customers (contact_number, shipping_address) VALUES
-('13800138000', '广东省深圳市南山区XX小区1栋101'),
-('13900139000', '广东省广州市越秀区XX花园2栋202'),
-('13700137000', '上海市静安区XX公寓3栋303');
+('13800138000', 'Unit 101, Building 1, XX Community, Nanshan District, Shenzhen, Guangdong Province'),
+('13900139000', 'Unit 202, Building 2, XX Garden, Yuexiu District, Guangzhou, Guangdong Province'),
+('13700137000', 'Unit 303, Building 3, XX Apartment, Jing''an District, Shanghai');
 
--- 产品数据（最多3个标签）
+-- Product data (max 3 tags)
 INSERT INTO products (vendor_id, product_name, price, stock_quantity, tag1, tag2, tag3) VALUES
-(1, '无线蓝牙耳机', 199.00, 100, '数码', '耳机', '无线'),
-(1, '智能手机充电宝', 89.00, 200, '数码', '充电', '便携'),
-(2, '纯棉休闲T恤', 59.00, 300, '服装', 'T恤', '纯棉'),
-(2, '牛仔长裤', 129.00, 150, '服装', '牛仔裤', '休闲'),
-(3, '家用陶瓷碗套装', 79.00, 80, '家居', '餐具', '陶瓷'),
-(3, '纯棉吸水毛巾', 29.00, 500, '家居', '毛巾', '纯棉');
+(1, 'Wireless Bluetooth Earbuds', 199.00, 100, 'Digital', 'Earbuds', 'Wireless'),
+(1, 'Smartphone Power Bank', 89.00, 200, 'Digital', 'Charging', 'Portable'),
+(2, 'Cotton Casual T-shirt', 59.00, 300, 'Apparel', 'T-shirt', 'Cotton'),
+(2, 'Denim Jeans', 129.00, 150, 'Apparel', 'Jeans', 'Casual'),
+(3, 'Ceramic Bowl Set', 79.00, 80, 'Home', 'Tableware', 'Ceramic'),
+(3, 'Cotton Absorbent Towel', 29.00, 500, 'Home', 'Towel', 'Cotton');
