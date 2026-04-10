@@ -1,6 +1,4 @@
-"""
-Order Service Layer (OrderService)
-"""
+
 
 from dao.order_dao import OrderDAO
 from dao.product_dao import ProductDAO
@@ -13,6 +11,7 @@ from typing import List, Dict, Any, Optional
 class OrderService:
     """Order business logic class"""
 
+    # ORM inject
     def __init__(self, config: DatabaseConfig):
         self.order_dao = OrderDAO(config)
         self.product_dao = ProductDAO(config)
@@ -20,26 +19,20 @@ class OrderService:
         self.transaction_dao = TransactionDAO(config)
 
     def get_all_orders(self) -> List[Dict[str, Any]]:
-        """Get all orders"""
-        try:
-            return self.order_dao.get_all_orders()
-        except Exception as e:
-            raise Exception(f"Failed to get order list: {str(e)}")
+        return self.order_dao.get_all_orders()
+
 
     def get_orders_by_customer(self, customer_id: int) -> List[Dict[str, Any]]:
-        """Get orders by customer ID"""
         # Validate customer
         customer = self.customer_dao.get_customer_by_id(customer_id)
         if not customer:
             raise ValueError(f"Customer with ID {customer_id} does not exist")
 
-        try:
-            return self.order_dao.get_orders_by_customer(customer_id)
-        except Exception as e:
-            raise Exception(f"Failed to get order list: {str(e)}")
+
+        return self.order_dao.get_orders_by_customer(customer_id)
+
 
     def get_order_by_id(self, order_id: int) -> Optional[Dict[str, Any]]:
-        """Get order details (including all items)"""
         if not order_id or order_id <= 0:
             raise ValueError("Invalid order ID")
 
@@ -47,18 +40,14 @@ class OrderService:
         if not order:
             raise ValueError(f"Order with ID {order_id} does not exist")
 
-        # Get order items
+        # Get order items list
         items = self.order_dao.get_order_items(order_id)
         order['items'] = items
         return order
 
     def create_order(self, customer_id: int, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Create a new order
-        :param customer_id: Customer ID
-        :param items: List of order items [{'product_id': id, 'quantity': qty}, ...]
-        :return: Newly created order information
-        """
+        # 1/ require order list
+
         # Validate customer
         customer = self.customer_dao.get_customer_by_id(customer_id)
         if not customer:
@@ -73,6 +62,8 @@ class OrderService:
         items_data = []
 
         for item in items:
+            # for loop to map into dict and total price
+
             product_id = item.get('product_id')
             quantity = item.get('quantity')
 
@@ -123,6 +114,7 @@ class OrderService:
                         item_data['product_id'],
                         item_data['quantity'],
                         item_data['subtotal'],
+                        # order state[complete,finish]
                         'completed'
                     )
 
@@ -131,6 +123,7 @@ class OrderService:
                 raise Exception("Failed to create order")
         except Exception as e:
             raise Exception(f"Failed to create order: {str(e)}")
+
 
     def cancel_order(self, order_id: int) -> bool:
         """
@@ -161,20 +154,18 @@ class OrderService:
     def remove_order_item(self, order_id: int, product_id: int) -> bool:
         """
         Remove an item from an order
-        :param order_id: Order ID
-        :param product_id: Product ID
-        :return: Whether the operation was successful
+            remove from list if user second click
         """
         order = self.order_dao.get_order_by_id(order_id)
         if not order:
             raise ValueError(f"Order with ID {order_id} does not exist")
 
-        # Check order status
+        # 'shipped', 'delivered' 'complete'
         if order['status'] in ['shipped', 'delivered']:
             raise ValueError(f"Cannot modify a shipped order (current status: {order['status']})")
 
         try:
-            # Get order items
+            # 1 Get order items
             items = self.order_dao.get_order_items(order_id)
             item_to_remove = None
 
@@ -186,13 +177,13 @@ class OrderService:
             if not item_to_remove:
                 raise ValueError(f"Product with ID {product_id} does not exist in this order")
 
-            # Restore stock
+            # 2 Restore stock
             self.product_dao.update_stock(product_id, item_to_remove['quantity'])
 
-            # Remove order item
+            # 3 Remove order item
             self.order_dao.remove_order_item(order_id, product_id)
 
-            # Update order total
+            # 4 Update order total
             new_total = order['total_price'] - item_to_remove['subtotal']
             self.order_dao.update_order_total(order_id, new_total)
 
@@ -201,7 +192,6 @@ class OrderService:
             raise Exception(f"Failed to remove order item: {str(e)}")
 
     def update_order_status(self, order_id: int, status: str) -> bool:
-        """Update order status"""
         valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
 
         if status not in valid_statuses:

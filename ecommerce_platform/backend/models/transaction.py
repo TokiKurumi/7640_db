@@ -7,7 +7,6 @@ from datetime import datetime
 
 
 class TransactionResponse(BaseModel):
-    """Transaction response model - used for API returns"""
     transaction_id: int
     order_id: int
     vendor_id: int

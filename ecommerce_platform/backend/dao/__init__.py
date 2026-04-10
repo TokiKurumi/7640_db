@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConfig:
-    """Database configuration"""
     def __init__(self, host='localhost', port=3306, user='root', password='',
                  database='ecommerce_platform', charset='utf8mb4'):
         self.host = host
@@ -35,13 +34,11 @@ class DatabaseConfig:
 
 
 class BaseDAO:
-    """Base DAO class - provides common database operations"""
 
     def __init__(self, config: DatabaseConfig):
         self.config = config
 
     def get_connection(self):
-        """Get a database connection"""
         try:
             return pymysql.connect(**self.config.to_dict())
         except Exception as e:
@@ -65,12 +62,14 @@ class BaseDAO:
             raise
 
     def execute_update(self, query: str, params: tuple = ()) -> Tuple[int, int]:
-        """Execute an update/insert/delete statement"""
+        """return affected rows: to dynamic update the table"""
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
             cursor.execute(query, params)
             conn.commit()
+
+            # rowcount
             affected_rows = cursor.rowcount
             last_id = cursor.lastrowid
             conn.close()
@@ -81,7 +80,7 @@ class BaseDAO:
             raise
 
     def execute_transaction(self, operations: List[Tuple[str, tuple]]) -> bool:
-        """Execute a transactional operation"""
+        # Transaction need to rollback
         conn = self.get_connection()
         try:
             cursor = conn.cursor()

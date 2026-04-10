@@ -50,7 +50,7 @@ def check_files():
     """Check if critical frontend files exist"""
     print("\n📁 Checking frontend file structure...")
     files_to_check = [
-        "ecommerce_platform/frontend/main_new.py",
+        "ecommerce_platform/frontend/main_front.py",
         "ecommerce_platform/frontend/ui/base_components.py",
         "ecommerce_platform/frontend/controllers/product_tab.py",
         "ecommerce_platform/frontend/services/api_client.py",
@@ -107,7 +107,7 @@ def main():
     if all(results.values()):
         print("✅ All checks passed!")
         print("\nStart the frontend:")
-        print("  python ecommerce_platform/frontend/main_new.py")
+        print("  python ecommerce_platform/frontend/main_front.py")
         print("="*60)
         return 0
     else:

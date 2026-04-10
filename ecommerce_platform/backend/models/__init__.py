@@ -1,6 +1,3 @@
-"""
-Data Model Layer - Defines all Pydantic models
-"""
 
 from .vendor import VendorBase, VendorResponse
 from .product import ProductBase, ProductResponse

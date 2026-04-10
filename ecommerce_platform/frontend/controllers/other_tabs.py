@@ -10,6 +10,10 @@ from ui.base_components import BaseFrame, InputFrame, PaginatedDataTable, DataTa
 from services.api_client import APIClient
 from services.async_api_client import AsyncAPIClient
 
+# 1. cus
+# 2. order
+# 3. trans
+
 
 class CustomerTabController(TabController):
     """Customer Tab"""
@@ -18,7 +22,6 @@ class CustomerTabController(TabController):
         super().__init__(notebook, "Customers")
     
     def setup_ui(self):
-        """Set up the UI"""
         # Action buttons
         button_frame = ttk.Frame(self.frame)
         button_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -111,6 +114,10 @@ class OrderTabController(TabController):
         self.order_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # Bind table selection event to show details
+        # double click
+
+        # self.bind(self.show_order_details())
+
         self.order_table.tree.bind("<Double-1>", lambda e: self.show_order_details())
 
     def refresh_orders(self):
@@ -136,7 +143,7 @@ class OrderTabController(TabController):
         """Show create order dialog"""
         dialog = tk.Toplevel(self.frame)
         dialog.title("New Order")
-        dialog.geometry("800x600")
+        dialog.geometry("800x650")
         
         # Explanatory text
         ttk.Label(dialog, text="Please add items line by line. You can select different customers for each line (but all items in the same order must belong to the same customer)", 

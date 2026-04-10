@@ -26,7 +26,7 @@ Fixes:
    ✓ INFO:     Uvicorn running on http://127.0.0.1:8000
 
 2. Start the frontend (in another terminal):
-   $ python frontend/main_new.py
+   $ python frontend/main_front.py
    
    Expected: The application window opens, showing 5 tabs
 
