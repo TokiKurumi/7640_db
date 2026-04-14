@@ -31,42 +31,78 @@ class OrderDAO(BaseDAO):
         """
         return self.execute_query(query, (order_id,), fetch_one=True)
 
-    def get_order_items(self, order_id: int) -> List[Dict[str, Any]]:
+    def get_order_items(self, order_id: int, cursor: Optional[Any] = None) -> List[Dict[str, Any]]:
         query = """
             SELECT order_item_id, product_id, quantity, unit_price, subtotal 
             FROM order_items 
             WHERE order_id = %s
         """
+        if cursor is not None:
+            cursor.execute(query, (order_id,))
+            return list(cursor.fetchall())
         return self.execute_query(query, (order_id,))
 
-    def create_order(self, customer_id: int, total_price: float, status: str = 'pending') -> Tuple[int, int]:
+    def create_order(
+        self,
+        customer_id: int,
+        total_price: float,
+        status: str = 'pending',
+        cursor: Optional[Any] = None,
+    ) -> Tuple[int, int]:
         query = """
             INSERT INTO orders (customer_id, total_price, status)
             VALUES (%s, %s, %s)
         """
-        return self.execute_update(query, (customer_id, total_price, status))
+        params = (customer_id, total_price, status)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount, cursor.lastrowid
+        return self.execute_update(query, params)
 
-    def add_order_item(self, order_id: int, product_id: int, quantity: int,
-                      unit_price: float, subtotal: float) -> Tuple[int, int]:
+    def add_order_item(
+        self,
+        order_id: int,
+        product_id: int,
+        quantity: int,
+        unit_price: float,
+        subtotal: float,
+        cursor: Optional[Any] = None,
+    ) -> Tuple[int, int]:
         query = """
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (%s, %s, %s, %s, %s)
         """
-        return self.execute_update(query, (order_id, product_id, quantity, unit_price, subtotal))
+        params = (order_id, product_id, quantity, unit_price, subtotal)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount, cursor.lastrowid
+        return self.execute_update(query, params)
 
-    def update_order_status(self, order_id: int, status: str) -> int:
+    def update_order_status(self, order_id: int, status: str, cursor: Optional[Any] = None) -> int:
         query = "UPDATE orders SET status = %s WHERE order_id = %s"
-        affected_rows, _ = self.execute_update(query, (status, order_id))
+        params = (status, order_id)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount
+        affected_rows, _ = self.execute_update(query, params)
         return affected_rows
 
-    def update_order_total(self, order_id: int, new_total: float) -> int:
+    def update_order_total(self, order_id: int, new_total: float, cursor: Optional[Any] = None) -> int:
         query = "UPDATE orders SET total_price = %s WHERE order_id = %s"
-        affected_rows, _ = self.execute_update(query, (new_total, order_id))
+        params = (new_total, order_id)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount
+        affected_rows, _ = self.execute_update(query, params)
         return affected_rows
 
-    def remove_order_item(self, order_id: int, product_id: int) -> int:
+    def remove_order_item(self, order_id: int, product_id: int, cursor: Optional[Any] = None) -> int:
         query = "DELETE FROM order_items WHERE order_id = %s AND product_id = %s"
-        affected_rows, _ = self.execute_update(query, (order_id, product_id))
+        params = (order_id, product_id)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount
+        affected_rows, _ = self.execute_update(query, params)
         return affected_rows
 
     def get_order_status(self, order_id: int) -> Optional[str]:

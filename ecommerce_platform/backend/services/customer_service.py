@@ -48,7 +48,7 @@ class CustomerService:
 
         # Check if contact number already exists
         if self.customer_dao.customer_exists(contact_number.strip()):
-            raise ValueError(f"Contact number '{contact_number}' is already in use")
+            raise ValueError(f"Contact number '{contact_number}' is used")
 
         affected_rows, customer_id = self.customer_dao.create_customer(
             customer_name.strip(), contact_number.strip(), shipping_address.strip()
@@ -57,7 +57,7 @@ class CustomerService:
         if affected_rows > 0:
             return self.get_customer_by_id(customer_id)
         else:
-            raise Exception("Failed to create customer")
+            raise Exception("Failed -- create customer")
 
 
 

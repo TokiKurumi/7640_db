@@ -61,6 +61,7 @@ class OrderService:
         total_price = 0
         items_data = []
 
+        # mapper into dict
         for item in items:
             # for loop to map into dict and total price
 
@@ -87,42 +88,37 @@ class OrderService:
                 'vendor_id': product['vendor_id']
             })
 
-        # Create order
-        try:
-            affected_rows, order_id = self.order_dao.create_order(customer_id, total_price, 'pending')
+        with self.order_dao.transaction() as cursor:
+            affected_rows, order_id = self.order_dao.create_order(
+                customer_id, total_price, 'pending', cursor=cursor
+            )
+            if affected_rows <= 0 or not order_id:
+                raise RuntimeError("Failed to create order")
 
-            if affected_rows > 0:
-                # Add order items and deduct stock
-                for item_data in items_data:
-                    # Add order item
-                    self.order_dao.add_order_item(
-                        order_id,
-                        item_data['product_id'],
-                        item_data['quantity'],
-                        item_data['unit_price'],
-                        item_data['subtotal']
-                    )
+            for item_data in items_data:
+                self.order_dao.add_order_item(
+                    order_id,
+                    item_data['product_id'],
+                    item_data['quantity'],
+                    item_data['unit_price'],
+                    item_data['subtotal'],
+                    cursor=cursor,
+                )
+                self.product_dao.update_stock(
+                    item_data['product_id'], -item_data['quantity'], cursor=cursor
+                )
+                self.transaction_dao.create_transaction(
+                    order_id,
+                    item_data['vendor_id'],
+                    customer_id,
+                    item_data['product_id'],
+                    item_data['quantity'],
+                    item_data['subtotal'],
+                    'completed',
+                    cursor=cursor,
+                )
 
-                    # Deduct stock
-                    self.product_dao.update_stock(item_data['product_id'], -item_data['quantity'])
-
-                    # Create transaction record
-                    self.transaction_dao.create_transaction(
-                        order_id,
-                        item_data['vendor_id'],
-                        customer_id,
-                        item_data['product_id'],
-                        item_data['quantity'],
-                        item_data['subtotal'],
-                        # order state[complete,finish]
-                        'completed'
-                    )
-
-                return self.get_order_by_id(order_id)
-            else:
-                raise Exception("Failed to create order")
-        except Exception as e:
-            raise Exception(f"Failed to create order: {str(e)}")
+        return self.get_order_by_id(order_id)
 
 
     def cancel_order(self, order_id: int) -> bool:
@@ -139,17 +135,17 @@ class OrderService:
         if order['status'] in ['shipped', 'delivered']:
             raise ValueError(f"Cannot cancel a shipped order (current status: {order['status']})")
 
+        items = self.order_dao.get_order_items(order_id)
         try:
-            # Restore stock
-            items = self.order_dao.get_order_items(order_id)
-            for item in items:
-                self.product_dao.update_stock(item['product_id'], item['quantity'])
-
-            # Update order status
-            self.order_dao.update_order_status(order_id, 'cancelled')
+            with self.order_dao.transaction() as cursor:
+                for item in items:
+                    self.product_dao.update_stock(
+                        item['product_id'], item['quantity'], cursor=cursor
+                    )
+                self.order_dao.update_order_status(order_id, 'cancelled', cursor=cursor)
             return True
         except Exception as e:
-            raise Exception(f"Failed to cancel order: {str(e)}")
+            raise Exception(f"Failed to cancel order: {str(e)}") from e
 
     def remove_order_item(self, order_id: int, product_id: int) -> bool:
         """
@@ -165,31 +161,28 @@ class OrderService:
             raise ValueError(f"Cannot modify a shipped order (current status: {order['status']})")
 
         try:
-            # 1 Get order items
-            items = self.order_dao.get_order_items(order_id)
-            item_to_remove = None
+            with self.order_dao.transaction() as cursor:
+                items = self.order_dao.get_order_items(order_id, cursor=cursor)
+                item_to_remove = None
+                for item in items:
+                    if item['product_id'] == product_id:
+                        item_to_remove = item
+                        break
 
-            for item in items:
-                if item['product_id'] == product_id:
-                    item_to_remove = item
-                    break
+                if not item_to_remove:
+                    raise ValueError(
+                        f"Product with ID {product_id} does not exist in this order"
+                    )
 
-            if not item_to_remove:
-                raise ValueError(f"Product with ID {product_id} does not exist in this order")
-
-            # 2 Restore stock
-            self.product_dao.update_stock(product_id, item_to_remove['quantity'])
-
-            # 3 Remove order item
-            self.order_dao.remove_order_item(order_id, product_id)
-
-            # 4 Update order total
-            new_total = order['total_price'] - item_to_remove['subtotal']
-            self.order_dao.update_order_total(order_id, new_total)
-
+                self.product_dao.update_stock(
+                    product_id, item_to_remove['quantity'], cursor=cursor
+                )
+                self.order_dao.remove_order_item(order_id, product_id, cursor=cursor)
+                new_total = order['total_price'] - item_to_remove['subtotal']
+                self.order_dao.update_order_total(order_id, new_total, cursor=cursor)
             return True
         except Exception as e:
-            raise Exception(f"Failed to remove order item: {str(e)}")
+            raise Exception(f"Failed to remove order item: {str(e)}") from e
 
     def update_order_status(self, order_id: int, status: str) -> bool:
         valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']

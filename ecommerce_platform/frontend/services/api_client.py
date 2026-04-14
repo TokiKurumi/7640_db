@@ -48,28 +48,20 @@ class APIClient:
         except requests.exceptions.RequestException as e:
             raise Exception(f"Request error: {str(e)}")
 
-    # ========================================================================
-    # Vendor API
-    # ========================================================================
 
     @staticmethod
     def get_vendors() -> List[Dict[str, Any]]:
-        """Get all vendors"""
         return APIClient.request("GET", "/vendors")
 
     @staticmethod
     def create_vendor(business_name: str, location: Optional[str] = None) -> Dict[str, Any]:
-        """Create a vendor"""
         data = {"business_name": business_name, "geographical_presence": location}
         return APIClient.request("POST", "/vendors", data=data)
 
-    # ========================================================================
-    # Product API
-    # ========================================================================
 
+    # TODO 4/19 接口测试
     @staticmethod
     def get_products(vendor_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Get products"""
         params = {"vendor_id": vendor_id} if vendor_id else None
         return APIClient.request("GET", "/products", params=params)
 
@@ -77,7 +69,6 @@ class APIClient:
     def create_product(vendor_id: int, product_name: str, price: float,
                       stock: int, tag1: str = None, tag2: str = None,
                       tag3: str = None) -> Dict[str, Any]:
-        """Create a product"""
         data = {
             "product_name": product_name,
             "listed_price": price,
@@ -90,21 +81,15 @@ class APIClient:
 
     @staticmethod
     def search_products(tag: str) -> List[Dict[str, Any]]:
-        """Search for products"""
         return APIClient.request("GET", "/products/search", params={"tag": tag})
 
-    # ========================================================================
-    # Customer API
-    # ========================================================================
 
     @staticmethod
     def get_customers() -> List[Dict[str, Any]]:
-        """Get all customers"""
         return APIClient.request("GET", "/customers")
 
     @staticmethod
     def create_customer(name: str, phone: str, address: str) -> Dict[str, Any]:
-        """Create a customer"""
         data = {
             "customer_name": name,
             "contact_number": phone,
@@ -112,43 +97,34 @@ class APIClient:
         }
         return APIClient.request("POST", "/customers", data=data)
 
-    # ========================================================================
-    # Order API
-    # ========================================================================
 
     @staticmethod
     def get_orders(customer_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Get orders"""
         params = {"customer_id": customer_id} if customer_id else None
         return APIClient.request("GET", "/orders", params=params)
 
     @staticmethod
     def get_order_details(order_id: int) -> Dict[str, Any]:
-        """Get order details"""
         return APIClient.request("GET", f"/orders/{order_id}")
 
     @staticmethod
     def create_order(customer_id: int, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Create an order"""
         data = {"customer_id": customer_id, "items": items}
         return APIClient.request("POST", "/orders", data=data)
 
     @staticmethod
     def cancel_order(order_id: int) -> Dict[str, str]:
-        """Cancel an order"""
         return APIClient.request("DELETE", f"/orders/{order_id}")
+
+
 
     @staticmethod
     def remove_order_item(order_id: int, product_id: int) -> Dict[str, str]:
-        """Remove an order item"""
         return APIClient.request("DELETE", f"/orders/{order_id}/items/{product_id}")
 
-    # ========================================================================
-    # Transaction API
-    # ========================================================================
+
 
     @staticmethod
     def get_transactions(vendor_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Get transactions"""
         params = {"vendor_id": vendor_id} if vendor_id else None
         return APIClient.request("GET", "/transactions", params=params)

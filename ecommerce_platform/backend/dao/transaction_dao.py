@@ -36,16 +36,28 @@ class TransactionDAO(BaseDAO):
         """
         return self.execute_query(query, (order_id,))
 
-    def create_transaction(self, order_id: int, vendor_id: int, customer_id: int,
-                          product_id: int, quantity: int, transaction_amount: float,
-                          status: str = 'completed') -> Tuple[int, int]:
+    def create_transaction(
+        self,
+        order_id: int,
+        vendor_id: int,
+        customer_id: int,
+        product_id: int,
+        quantity: int,
+        transaction_amount: float,
+        status: str = 'completed',
+        cursor: Optional[Any] = None,
+    ) -> Tuple[int, int]:
         query = """
             INSERT INTO transactions (order_id, vendor_id, customer_id, product_id, quantity, 
                                      transaction_amount, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        return self.execute_update(query, (order_id, vendor_id, customer_id, product_id,
-                                           quantity, transaction_amount, status))
+        params = (order_id, vendor_id, customer_id, product_id,
+                  quantity, transaction_amount, status)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount, cursor.lastrowid
+        return self.execute_update(query, params)
 
     def update_transaction_status(self, transaction_id: int, status: str) -> int:
         query = "UPDATE transactions SET status = %s WHERE transaction_id = %s"

@@ -6,6 +6,7 @@ Provides direct interaction with the database
 import pymysql
 from pymysql.cursors import DictCursor
 from typing import List, Dict, Any, Optional, Tuple
+from contextlib import contextmanager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,6 @@ class BaseDAO:
             raise
 
     def execute_query(self, query: str, params: tuple = (), fetch_one: bool = False) -> Any:
-        """Execute a query statement"""
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
@@ -55,11 +55,12 @@ class BaseDAO:
                 result = cursor.fetchone()
             else:
                 result = cursor.fetchall()
-            conn.close()
             return result
         except Exception as e:
             logger.error(f"Query execution failed: {str(e)}")
             raise
+        finally:
+            conn.close()
 
     def execute_update(self, query: str, params: tuple = ()) -> Tuple[int, int]:
         """return affected rows: to dynamic update the table"""
@@ -72,24 +73,45 @@ class BaseDAO:
             # rowcount
             affected_rows = cursor.rowcount
             last_id = cursor.lastrowid
-            conn.close()
             return affected_rows, last_id
         except Exception as e:
             conn.rollback()
             logger.error(f"Update execution failed: {str(e)}")
             raise
+        finally:
+            conn.close()
 
     def execute_transaction(self, operations: List[Tuple[str, tuple]]) -> bool:
         # Transaction need to rollback
         conn = self.get_connection()
+        cursor = conn.cursor()
         try:
-            cursor = conn.cursor()
             for query, params in operations:
                 cursor.execute(query, params)
             conn.commit()
-            conn.close()
             return True
         except Exception as e:
             conn.rollback()
             logger.error(f"Transaction execution failed: {str(e)}")
             raise
+        finally:
+            cursor.close()
+            conn.close()
+
+    @contextmanager
+    def transaction(self):
+        """
+        Longer-running transaction with the same cursor 
+        """
+        conn = pymysql.connect(**self.config.to_dict())
+        cursor = conn.cursor()
+        try:
+            yield cursor
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Transaction execution failed: {str(e)}")
+            raise
+        finally:
+            cursor.close()
+            conn.close()

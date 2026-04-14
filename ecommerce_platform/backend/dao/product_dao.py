@@ -58,13 +58,17 @@ class ProductDAO(BaseDAO):
         """
         return self.execute_update(query, (vendor_id, product_name, listed_price, stock_quantity, tag1, tag2, tag3))
 
-    def update_stock(self, product_id: int, quantity_change: int) -> int:
+    def update_stock(self, product_id: int, quantity_change: int, cursor: Optional[Any] = None) -> int:
         query = """
             UPDATE products 
             SET stock_quantity = stock_quantity + %s 
             WHERE product_id = %s
         """
-        affected_rows, _ = self.execute_update(query, (quantity_change, product_id))
+        params = (quantity_change, product_id)
+        if cursor is not None:
+            cursor.execute(query, params)
+            return cursor.rowcount
+        affected_rows, _ = self.execute_update(query, params)
         return affected_rows
 
     def get_stock_quantity(self, product_id: int) -> Optional[int]:

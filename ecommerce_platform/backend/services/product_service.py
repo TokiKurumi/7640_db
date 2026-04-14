@@ -84,17 +84,17 @@ class ProductService:
 
 
 
-    def get_product_stock(self, product_id: int) -> int:
-        """Get product stock"""
-        stock = self.product_dao.get_stock_quantity(product_id)
-        if stock is None:
-            raise ValueError(f"Product with ID {product_id} does not exist")
-        return stock
-
-
-
-
-    def check_stock_availability(self, product_id: int, required_quantity: int) -> bool:
-        """Check if a product has enough stock"""
-        stock = self.get_product_stock(product_id)
-        return stock >= required_quantity
+    # def get_product_stock(self, product_id: int) -> int:
+    #     """Get product stock"""
+    #     stock = self.product_dao.get_stock_quantity(product_id)
+    #     if stock is None:
+    #         raise ValueError(f"Product with ID {product_id} does not exist")
+    #     return stock
+    #
+    #
+    #
+    #
+    # def check_stock_availability(self, product_id: int, required_quantity: int) -> bool:
+    #     """Check if a product has enough stock"""
+    #     stock = self.get_product_stock(product_id)
+    #     return stock >= required_quantity

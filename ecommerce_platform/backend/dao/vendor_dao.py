@@ -2,7 +2,6 @@
 from . import BaseDAO, DatabaseConfig
 from typing import List, Dict, Any, Optional
 
-
 class VendorDAO(BaseDAO):
 
     def get_all_vendors(self) -> List[Dict[str, Any]]:
@@ -21,6 +20,7 @@ class VendorDAO(BaseDAO):
         """
         return self.execute_query(query, (vendor_id,), fetch_one=True)
 
+
     def create_vendor(self, business_name: str, geographical_presence: Optional[str] = None) -> tuple[int, int]:
         query = """
             INSERT INTO vendors (business_name, geographical_presence, average_rating)
@@ -32,7 +32,3 @@ class VendorDAO(BaseDAO):
         query = "SELECT vendor_id FROM vendors WHERE business_name = %s"
         result = self.execute_query(query, (business_name,), fetch_one=True)
         return result is not None
-
-
-# Import Tuple
-from typing import Tuple

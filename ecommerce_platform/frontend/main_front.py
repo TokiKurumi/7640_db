@@ -1,14 +1,3 @@
-"""
-E-Commerce Platform - A clean frontend GUI (v2.0 Modular)
-
-Architecture:
-  - config/: Configuration files
-  - services/: API clients
-  - ui/: UI base components
-  - controllers/: Tab controllers
-  - main.py: Main application
-"""
-
 import tkinter as tk
 from tkinter import ttk
 from config.app_config import *
@@ -21,7 +10,7 @@ from controllers.other_tabs import CustomerTabController, OrderTabController, Tr
 
 
 class EcommercePlatformApp:
-    """E-commerce Platform GUI Application"""
+
     
     def __init__(self, root):
         self.root = root
@@ -66,7 +55,6 @@ class EcommercePlatformApp:
         self.status_bar = StatusBar(self.root)
 
     def load_initial_data(self):
-        """Load initial data (asynchronously)"""
         self.update_status("Loading data...")
         
         # Counter to track completed loading tasks
@@ -95,7 +83,6 @@ class EcommercePlatformApp:
         AsyncAPIClient.get_customers_async(on_customers_loaded, on_error)
     
     def _on_data_loaded(self):
-        """Data loading callback"""
         self.load_count += 1
         
         # When all data has finished loading
@@ -116,7 +103,6 @@ class EcommercePlatformApp:
             self.update_status("Ready")
 
     def on_vendors_updated(self):
-        """Vendor update callback (asynchronous)"""
         def on_success(data):
             self.vendors = data
             self.product_tab.vendors = self.vendors
@@ -128,12 +114,10 @@ class EcommercePlatformApp:
         AsyncAPIClient.get_vendors_async(on_success, on_error)
 
     def update_status(self, message: str):
-        """Update the status bar"""
         self.status_bar.set_status(message)
 
 
 def main():
-    """Main function"""
     root = tk.Tk()
     app = EcommercePlatformApp(root)
     root.mainloop()
